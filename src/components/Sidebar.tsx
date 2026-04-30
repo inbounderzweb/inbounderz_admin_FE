@@ -1,24 +1,33 @@
 import React from 'react';
-import { 
-  LayoutGrid, 
-  MessageSquare, 
-  FileText, 
-  Users, 
-  BarChart3, 
-  Settings, 
+import {
+  LayoutGrid,
+  MessageSquare,
+  FileText,
+  Users,
+  BarChart3,
+  Settings,
   LogOut,
   Menu
 } from 'lucide-react';
-import { useAppStore } from '../store/useStore';
+import { useAppStore, useDataStore } from '../store/useStore';
 import { clsx } from 'clsx';
+import { useEffect } from 'react';
 
 const Sidebar = () => {
   const { sidebarCollapsed, toggleSidebar, activePage, setActivePage, logout } = useAppStore();
+  const { unreadEnquiriesCount, unreadCareersCount, fetchUnreadCounts } = useDataStore() as any;
+
+  useEffect(() => {
+    fetchUnreadCounts();
+    // Optional: could set up an interval to poll for updates
+    // const interval = setInterval(fetchUnreadCounts, 60000);
+    // return () => clearInterval(interval);
+  }, [fetchUnreadCounts]);
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid, section: 'Main' },
-    { id: 'enquiries', label: 'Enquiries', icon: MessageSquare, section: 'Main', badge: 12 },
-    { id: 'careers', label: 'Careers', icon: FileText, section: 'Main', badge: 8 },
+    { id: 'enquiries', label: 'Enquiries', icon: MessageSquare, section: 'Main', badge: unreadEnquiriesCount > 0 ? unreadEnquiriesCount : null },
+    { id: 'careers', label: 'Careers', icon: FileText, section: 'Main', badge: unreadCareersCount > 0 ? unreadCareersCount : null },
     { id: 'clients', label: 'Clients', icon: Users, section: 'Main' },
     { id: 'users', label: 'Users', icon: Users, section: 'Main' },
     { id: 'analytics', label: 'Analytics', icon: BarChart3, section: 'Reports' },
@@ -26,29 +35,29 @@ const Sidebar = () => {
   ];
 
   return (
-    <aside 
+    <aside
       className={clsx(
         "bg-[var(--color-sidebar-bg)] border-r border-[var(--color-border)] flex flex-col transition-all duration-300 z-20 h-screen overflow-hidden",
         sidebarCollapsed ? "w-[64px]" : "w-[240px]"
       )}
     >
       <div className="flex items-center gap-3 p-4 border-b border-[var(--color-border)] h-[52px] shrink-0">
-        <button 
+        <button
           onClick={toggleSidebar}
           className="w-8 h-8 bg-blue-600 rounded-lg shrink-0 flex items-center justify-center hover:opacity-80 transition-opacity"
           title={sidebarCollapsed ? "Expand Sidebar" : "Nexus Admin"}
         >
           <svg viewBox="0 0 16 16" className="w-4 h-4 fill-white">
-            <rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/>
+            <rect x="1" y="1" width="6" height="6" rx="1.5" /><rect x="9" y="1" width="6" height="6" rx="1.5" /><rect x="1" y="9" width="6" height="6" rx="1.5" /><rect x="9" y="9" width="6" height="6" rx="1.5" />
           </svg>
         </button>
-        
+
         {!sidebarCollapsed && (
           <>
             <span className="text-sm font-bold whitespace-nowrap overflow-hidden tracking-tight dark:text-white">
-              <span className="text-blue-600">Nexus</span> Admin
+              <span className="text-blue-600">Inbounderz</span>
             </span>
-            <button 
+            <button
               onClick={toggleSidebar}
               className="ml-auto p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
             >
@@ -100,7 +109,7 @@ const Sidebar = () => {
       </div>
 
       <div className="mt-auto border-t border-[var(--color-border)] p-2">
-        <button 
+        <button
           onClick={logout}
           className="flex items-center gap-3 py-2 px-4 mx-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 w-[calc(100%-12px)] transition-colors"
         >

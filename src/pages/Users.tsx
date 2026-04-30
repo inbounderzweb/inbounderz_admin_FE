@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Trash2, Mail, Shield, User as UserIcon, X, Loader2 } from 'lucide-react';
+import { Search, Plus, Trash2, Mail, Shield, User as UserIcon, X, Loader2, Eye, EyeOff, Lock } from 'lucide-react';
 import { useDataStore } from '../store/useStore';
 import { clsx } from 'clsx';
 
@@ -12,8 +12,11 @@ const Users = () => {
     name: '',
     email: '',
     password: '',
+    confirmPassword: '',
     role: 'user'
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -27,22 +30,33 @@ const Users = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
-    
-    const result = await addUser(formData);
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
+    setLoading(true);
+    const { confirmPassword, ...payload } = formData;
+    const result = await addUser(payload);
     setLoading(false);
     
     if (result.success) {
       setIsModalOpen(false);
-      setFormData({ name: '', email: '', password: '', role: 'user' });
+      setFormData({ name: '', email: '', password: '', confirmPassword: '', role: 'user' });
     } else {
       setError(result.message || 'Failed to create user');
     }
   };
 
   return (
-    <div className="space-y-4 animate-in fade-in duration-500">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-[18px] font-bold tracking-tight">
           Users Management
@@ -130,18 +144,12 @@ const Users = () => {
             </tbody>
           </table>
         </div>
-        
-        <div className="p-3 border-t border-[var(--color-border)] flex items-center justify-end gap-1 bg-gray-50/30 transition-colors">
-          <button className="w-7 h-7 flex items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-sidebar-bg)] text-[12px] hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-50 transition-colors">‹</button>
-          <button className="w-7 h-7 flex items-center justify-center rounded-md bg-blue-700 text-white text-[12px]">1</button>
-          <button className="w-7 h-7 flex items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-sidebar-bg)] text-[12px] hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">›</button>
-        </div>
       </div>
 
       {/* Create User Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-[var(--color-sidebar-bg)] border border-[var(--color-border)] rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-[var(--color-sidebar-bg)] border border-[var(--color-border)] rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
             <div className="flex items-center justify-between p-4 border-b border-[var(--color-border)]">
               <h2 className="text-[16px] font-bold">Create New User</h2>
               <button onClick={() => setIsModalOpen(false)} className="p-1 text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-full transition-colors">
@@ -149,15 +157,15 @@ const Users = () => {
               </button>
             </div>
             
-            <form onSubmit={handleSubmit} className="p-5 space-y-4">
+            <form onSubmit={handleSubmit} className="p-5 space-y-3.5">
               {error && (
-                <div className="p-3 bg-red-50 dark:bg-red-950/20 text-red-600 text-[12px] rounded-lg border border-red-100 dark:border-red-900/30">
+                <div className="p-3 bg-red-50 dark:bg-red-950/20 text-red-600 text-[11px] font-bold rounded-lg border border-red-100 dark:border-red-900/30">
                   {error}
                 </div>
               )}
               
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Full Name</label>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Full Name</label>
                 <div className="relative">
                   <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input 
@@ -172,7 +180,7 @@ const Users = () => {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Email Address</label>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Email Address</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input 
@@ -186,20 +194,54 @@ const Users = () => {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Password</label>
-                <input 
-                  required
-                  type="password" 
-                  placeholder="••••••••"
-                  className="w-full px-3 py-2 bg-[var(--color-page-bg)] border border-[var(--color-border)] rounded-xl text-[13px] outline-none focus:border-[var(--color-accent)] transition-all"
-                  value={formData.password}
-                  onChange={e => setFormData({...formData, password: e.target.value})}
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
+                    <input 
+                      required
+                      type={showPassword ? "text" : "password"} 
+                      placeholder="••••••••"
+                      className="w-full pl-9 pr-9 py-2 bg-[var(--color-page-bg)] border border-[var(--color-border)] rounded-xl text-[13px] outline-none focus:border-[var(--color-accent)] transition-all"
+                      value={formData.password}
+                      onChange={e => setFormData({...formData, password: e.target.value})}
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Confirm</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
+                    <input 
+                      required
+                      type={showConfirmPassword ? "text" : "password"} 
+                      placeholder="••••••••"
+                      className="w-full pl-9 pr-9 py-2 bg-[var(--color-page-bg)] border border-[var(--color-border)] rounded-xl text-[13px] outline-none focus:border-[var(--color-accent)] transition-all"
+                      value={formData.confirmPassword}
+                      onChange={e => setFormData({...formData, confirmPassword: e.target.value})}
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      {showConfirmPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Role</label>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Role</label>
                 <select 
                   className="w-full px-3 py-2 bg-[var(--color-page-bg)] border border-[var(--color-border)] rounded-xl text-[13px] outline-none focus:border-[var(--color-accent)] transition-all cursor-pointer"
                   value={formData.role}
@@ -211,7 +253,7 @@ const Users = () => {
                 </select>
               </div>
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-3 pt-3">
                 <button 
                   type="button" 
                   onClick={() => setIsModalOpen(false)}

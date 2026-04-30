@@ -126,28 +126,389 @@ export const useAppStore = create<AppState>()(
 );
 
 export const useDataStore = create((set) => ({
-  enquiries: [
-    { id: 1, name: 'Priya Sharma', email: 'priya@startup.io', phone: '+91 98765 43210', msg: 'Looking for a CRM solution for 50 users and integration with Zoho.', date: 'Apr 29', status: 'new', unread: true },
-    { id: 2, name: 'Rohan Das', email: 'rohan@techco.in', phone: '+91 87654 32109', msg: 'Need a custom ERP for manufacturing unit with inventory tracking.', date: 'Apr 28', status: 'new', unread: true },
-    { id: 3, name: 'Meera Iyer', email: 'meera@designhub.com', phone: '+91 76543 21098', msg: 'Looking for UI/UX redesign of our SaaS product dashboard.', date: 'Apr 28', status: 'reviewed', unread: false },
-  ],
-  resumes: [
-    { id: 1, name: 'Arjun Mehta', role: 'Senior React Developer', exp: '5 years', date: 'Apr 29', status: 'new', unread: true },
-    { id: 2, name: 'Sneha Reddy', role: 'Backend Engineer (Node.js)', exp: '3 years', date: 'Apr 29', status: 'new', unread: true },
-  ],
+  enquiries: [],
+  pagination: { total: 0, page: 1, limit: 10, pages: 1 },
+  isDataLoading: false,
+  unreadEnquiriesCount: 0,
+  
+  careers: [],
+  careersPagination: { total: 0, page: 1, limit: 10, pages: 1 },
+  isCareersLoading: false,
+  unreadCareersCount: 0,
+  
+  serverNotifications: [],
+  unreadNotificationsCount: 0,
+  isNotificationsLoading: false,
+
+  fetchNotifications: async () => {
+    set({ isNotificationsLoading: true });
+    try {
+      const response = await fetch('http://localhost:3000/notifications', { credentials: 'include' });
+      const data = await response.json();
+      if (data.success) {
+        set({ 
+          serverNotifications: data.data,
+          unreadNotificationsCount: data.unreadCount
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+    } finally {
+      set({ isNotificationsLoading: false });
+    }
+  },
+
+  markNotificationAsRead: async (id: string) => {
+    try {
+      const response = await fetch(`http://localhost:3000/notifications/${id}/read`, { 
+        method: 'PATCH',
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success) {
+        set((state: any) => ({
+          serverNotifications: state.serverNotifications.map((n: any) => 
+            n._id === id ? { ...n, isRead: true } : n
+          ),
+          unreadNotificationsCount: Math.max(0, state.unreadNotificationsCount - 1)
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+    }
+  },
+
+  markAllNotificationsAsRead: async () => {
+    try {
+      const response = await fetch('http://localhost:3000/notifications/read-all', { 
+        method: 'PATCH',
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success) {
+        set((state: any) => ({
+          serverNotifications: state.serverNotifications.map((n: any) => ({ ...n, isRead: true })),
+          unreadNotificationsCount: 0
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to mark all notifications as read:', error);
+    }
+  },
+
+  clearAllNotifications: async () => {
+    try {
+      const response = await fetch('http://localhost:3000/notifications/clear-all', { 
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success) {
+        set({ 
+          serverNotifications: [],
+          unreadNotificationsCount: 0
+        });
+      }
+    } catch (error) {
+      console.error('Failed to clear notifications:', error);
+    }
+  },
+
+  markNotificationByReferenceAsRead: async (refId: string) => {
+    try {
+      const response = await fetch(`http://localhost:3000/notifications/read-ref/${refId}`, { 
+        method: 'PATCH',
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success) {
+        set((state: any) => ({
+          serverNotifications: state.serverNotifications.map((n: any) => 
+            n.referenceId === refId ? { ...n, isRead: true } : n
+          ),
+          unreadNotificationsCount: state.serverNotifications.filter((n: any) => 
+            n.referenceId === refId && !n.isRead
+          ).length > 0 ? Math.max(0, state.unreadNotificationsCount - 1) : state.unreadNotificationsCount
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to mark notification by reference as read:', error);
+    }
+  },
+
+  dashboardStats: null,
+  isDashboardLoading: false,
+
+  fetchDashboardStats: async () => {
+    set({ isDashboardLoading: true });
+    try {
+      const response = await fetch('http://localhost:3000/dashboard/stats', { credentials: 'include' });
+      const data = await response.json();
+      if (data.success) {
+        set({ dashboardStats: data.data });
+      }
+    } catch (error) {
+      console.error('Failed to fetch dashboard stats:', error);
+    } finally {
+      set({ isDashboardLoading: false });
+    }
+  },
+
+  fetchUnreadCounts: async () => {
+    try {
+      const [enqRes, carRes] = await Promise.all([
+        fetch('http://localhost:3000/enquiries/unread-count', { credentials: 'include' }),
+        fetch('http://localhost:3000/careers/unread-count', { credentials: 'include' })
+      ]);
+      const [enqData, carData] = await Promise.all([enqRes.json(), carRes.json()]);
+      
+      if (enqData.success) {
+        set({ unreadEnquiriesCount: enqData.count });
+      }
+      if (carData.success) {
+        set({ unreadCareersCount: carData.count });
+      }
+    } catch (error) {
+      console.error('Failed to fetch unread counts:', error);
+    }
+  },
+
   clients: [
     { id: 1, name: 'Anil Verma', company: 'TechCorp India', contact: 'anil@techcorp.in', req: 'Custom ERP development', status: 'progress' },
     { id: 2, name: 'Riya Shah', company: 'Innovatech Solutions', contact: 'riya@innovatech.co', req: 'Mobile app for retail chain', status: 'new' },
   ],
   users: [],
   
-  deleteEnquiry: (id: number) => set((state: any) => ({
-    enquiries: state.enquiries.filter((e: any) => e.id !== id)
+  fetchEnquiries: async (page = 1, search = '', status = '', limit = 10, dateRange = '', startDate = '', endDate = '') => {
+    set({ isDataLoading: true });
+    try {
+      const response = await fetch(`http://localhost:3000/enquiries?page=${page}&limit=${limit}&search=${search}&status=${status}&dateRange=${dateRange}&startDate=${startDate}&endDate=${endDate}`, {
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success) {
+        set({ 
+          enquiries: data.data,
+          pagination: data.pagination
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch enquiries:', error);
+    } finally {
+      set({ isDataLoading: false });
+    }
+  },
+
+  exportEnquiries: async (search = '', status = '', dateRange = '', startDate = '', endDate = '') => {
+    try {
+      const response = await fetch(`http://localhost:3000/enquiries?isExport=true&search=${search}&status=${status}&dateRange=${dateRange}&startDate=${startDate}&endDate=${endDate}`, {
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success && data.data) {
+        if (data.data.length === 0) {
+          alert('No data found to export with the current filters.');
+          return;
+        }
+
+        const headers = ['Name', 'Email', 'Phone', 'Company', 'Designation', 'Industry', 'Message', 'Status', 'Date'];
+        const csvRows = [];
+        csvRows.push(headers.join(','));
+        
+        for (const row of data.data) {
+          const values = [
+            `"${(row.name || '').replace(/"/g, '""')}"`,
+            `"${(row.email || '').replace(/"/g, '""')}"`,
+            `"${(row.phone || '').replace(/"/g, '""')}"`,
+            `"${(row.company || '').replace(/"/g, '""')}"`,
+            `"${(row.designation || '').replace(/"/g, '""')}"`,
+            `"${(row.industry || '').replace(/"/g, '""')}"`,
+            `"${(row.message || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
+            `"${(row.status || '').replace(/"/g, '""')}"`,
+            `"${new Date(row.createdAt).toLocaleDateString()}"`
+          ];
+          csvRows.push(values.join(','));
+        }
+        
+        const csvString = csvRows.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.setAttribute('href', url);
+        a.setAttribute('download', `enquiries_export_${new Date().getTime()}.csv`);
+        a.click();
+      }
+    } catch (error) {
+      console.error('Failed to export enquiries:', error);
+    }
+  },
+
+  deleteEnquiry: (id: string) => set((state: any) => ({
+    enquiries: state.enquiries.filter((e: any) => e._id !== id)
   })),
-  markEnquiryRead: (id: number) => set((state: any) => ({
-    enquiries: state.enquiries.map((e: any) => e.id === id ? { ...e, unread: false, status: 'reviewed' } : e)
+  
+  markEnquiryRead: (id: string) => set((state: any) => ({
+    enquiries: state.enquiries.map((e: any) => e._id === id ? { ...e, status: 'reviewed' } : e)
   })),
 
+  bulkUpdateEnquiryStatus: async (ids: string[], status: string) => {
+    try {
+      const response = await fetch('http://localhost:3000/enquiries/bulk-status', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, status }),
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success) {
+        set((state: any) => ({
+          enquiries: state.enquiries.map((e: any) => 
+            ids.includes(e._id) ? { ...e, status } : e
+          )
+        }));
+        // Update unread count automatically
+        const { fetchUnreadCounts } = useDataStore.getState() as any;
+        if (fetchUnreadCounts) fetchUnreadCounts();
+        return { success: true };
+      }
+      return { success: false };
+    } catch (error) {
+      console.error('Failed to update enquiries:', error);
+      return { success: false };
+    }
+  },
+
+  bulkDeleteEnquiries: async (ids: string[]) => {
+    try {
+      const response = await fetch('http://localhost:3000/enquiries/bulk', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success) {
+        set((state: any) => ({
+          enquiries: state.enquiries.filter((e: any) => !ids.includes(e._id)),
+          pagination: { ...state.pagination, total: state.pagination.total - ids.length }
+        }));
+        return { success: true };
+      }
+      return { success: false };
+    } catch (error) {
+      console.error('Failed to delete enquiries:', error);
+      return { success: false };
+    }
+  },
+  fetchCareers: async (page = 1, search = '', status = '', limit = 10, dateRange = '', startDate = '', endDate = '') => {
+    set({ isCareersLoading: true });
+    try {
+      const response = await fetch(`http://localhost:3000/careers?page=${page}&limit=${limit}&search=${search}&status=${status}&dateRange=${dateRange}&startDate=${startDate}&endDate=${endDate}`, {
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success) {
+        set({ 
+          careers: data.data,
+          careersPagination: data.pagination
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch careers:', error);
+    } finally {
+      set({ isCareersLoading: false });
+    }
+  },
+
+  exportCareers: async (search = '', status = '', dateRange = '', startDate = '', endDate = '') => {
+    try {
+      const response = await fetch(`http://localhost:3000/careers?isExport=true&search=${search}&status=${status}&dateRange=${dateRange}&startDate=${startDate}&endDate=${endDate}`, {
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success && data.data) {
+        if (data.data.length === 0) {
+          alert('No data found to export with the current filters.');
+          return;
+        }
+
+        const headers = ['Email', 'Phone', 'Resume URL', 'Status', 'Date'];
+        const csvRows = [];
+        csvRows.push(headers.join(','));
+        
+        for (const row of data.data) {
+          const values = [
+            `"${(row.email || '').replace(/"/g, '""')}"`,
+            `"${(row.phone || '').replace(/"/g, '""')}"`,
+            `"${(row.resumeUrl || '').replace(/"/g, '""')}"`,
+            `"${(row.status || '').replace(/"/g, '""')}"`,
+            `"${new Date(row.createdAt).toLocaleDateString()}"`
+          ];
+          csvRows.push(values.join(','));
+        }
+        
+        const csvString = csvRows.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.setAttribute('href', url);
+        a.setAttribute('download', `careers_export_${new Date().getTime()}.csv`);
+        a.click();
+      }
+    } catch (error) {
+      console.error('Failed to export careers:', error);
+    }
+  },
+
+  bulkUpdateCareerStatus: async (ids: string[], status: string) => {
+    try {
+      const response = await fetch('http://localhost:3000/careers/bulk-status', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, status }),
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success) {
+        set((state: any) => ({
+          careers: state.careers.map((e: any) => 
+            ids.includes(e._id) ? { ...e, status } : e
+          )
+        }));
+        // Update unread count automatically
+        const { fetchUnreadCounts } = useDataStore.getState() as any;
+        if (fetchUnreadCounts) fetchUnreadCounts();
+        return { success: true };
+      }
+      return { success: false };
+    } catch (error) {
+      console.error('Failed to update careers:', error);
+      return { success: false };
+    }
+  },
+
+  bulkDeleteCareers: async (ids: string[]) => {
+    try {
+      const response = await fetch('http://localhost:3000/careers/bulk-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success) {
+        set((state: any) => ({
+          careers: state.careers.filter((e: any) => !ids.includes(e._id)),
+          careersPagination: { ...state.careersPagination, total: state.careersPagination.total - ids.length }
+        }));
+        return { success: true };
+      }
+      return { success: false };
+    } catch (error) {
+      console.error('Failed to delete careers:', error);
+      return { success: false };
+    }
+  },
   fetchUsers: async () => {
     try {
       const response = await fetch('http://localhost:3000/users', {
