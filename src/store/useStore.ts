@@ -5,6 +5,14 @@ interface User {
   name: string;
   email: string;
   role: string;
+  permissions?: {
+    dashboard: { view: boolean };
+    enquiries: { view: boolean; edit: boolean; delete: boolean; export: boolean };
+    careers: { view: boolean; edit: boolean; delete: boolean; export: boolean };
+    analytics: { view: boolean; export: boolean };
+    settings: { view: boolean; edit: boolean };
+    users: { view: boolean; create: boolean; edit: boolean; delete: boolean };
+  };
 }
 
 interface AppState {
@@ -25,9 +33,12 @@ interface AppState {
   user: User | null;
   isAuthenticated: boolean;
   isAuthLoading: boolean;
+  navigation: any[];
   login: (credentials: any) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  forgotPassword: (email: string) => Promise<{ success: boolean; message?: string }>;
+  resetPassword: (data: any) => Promise<{ success: boolean; message?: string }>;
 }
 
 export const useAppStore = create<AppState>()(
@@ -60,6 +71,7 @@ export const useAppStore = create<AppState>()(
       user: null,
       isAuthenticated: false,
       isAuthLoading: true,
+      navigation: [],
 
       login: async (credentials) => {
         try {
@@ -72,8 +84,9 @@ export const useAppStore = create<AppState>()(
           const data = await response.json();
           if (data.success) {
             set({ 
-              user: data.data, 
+              user: data.user || data.data, 
               isAuthenticated: true, 
+              navigation: data.navigation || [],
               activePage: 'dashboard' 
             });
             return { success: true };
@@ -90,7 +103,7 @@ export const useAppStore = create<AppState>()(
             method: 'POST',
             credentials: 'include'
           });
-          set({ user: null, isAuthenticated: false, activePage: 'login' });
+          set({ user: null, isAuthenticated: false, navigation: [], activePage: 'login' });
         } catch (error) {
           console.error('Logout failed:', error);
         }
@@ -104,14 +117,48 @@ export const useAppStore = create<AppState>()(
           });
           const data = await response.json();
           if (data.success) {
-            set({ user: data.data, isAuthenticated: true });
+            set({ 
+              user: data.user || data.data, 
+              isAuthenticated: true,
+              navigation: data.navigation || []
+            });
           } else {
-            set({ user: null, isAuthenticated: false });
+            set({ user: null, isAuthenticated: false, navigation: [] });
           }
         } catch (error) {
           set({ user: null, isAuthenticated: false });
         } finally {
           set({ isAuthLoading: false });
+        }
+      },
+
+      forgotPassword: async (email: string) => {
+        try {
+          const response = await fetch('http://localhost:3000/auth/forgot-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email }),
+            credentials: 'include'
+          });
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          return { success: false, message: 'Server error' };
+        }
+      },
+
+      resetPassword: async (resetData: any) => {
+        try {
+          const response = await fetch('http://localhost:3000/auth/reset-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(resetData),
+            credentials: 'include'
+          });
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          return { success: false, message: 'Server error' };
         }
       },
     }),
@@ -251,6 +298,24 @@ export const useDataStore = create((set) => ({
       console.error('Failed to fetch dashboard stats:', error);
     } finally {
       set({ isDashboardLoading: false });
+    }
+  },
+
+  analyticsStats: null,
+  isAnalyticsLoading: false,
+
+  fetchAnalyticsStats: async () => {
+    set({ isAnalyticsLoading: true });
+    try {
+      const response = await fetch('http://localhost:3000/dashboard/analytics', { credentials: 'include' });
+      const data = await response.json();
+      if (data.success) {
+        set({ analyticsStats: data.data });
+      }
+    } catch (error) {
+      console.error('Failed to fetch analytics stats:', error);
+    } finally {
+      set({ isAnalyticsLoading: false });
     }
   },
 
@@ -541,6 +606,48 @@ export const useDataStore = create((set) => ({
     } catch (error) {
       console.error('Failed to add user:', error);
       return { success: false, message: 'Network error' };
+    }
+  },
+
+  updateUser: async (userId: string, userData: any) => {
+    try {
+      const response = await fetch(`http://localhost:3000/users/${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData),
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success) {
+        set((state: any) => ({
+          users: state.users.map((u: any) => u._id === userId ? data.data : u)
+        }));
+        return { success: true };
+      }
+      return { success: false, message: data.message };
+    } catch (error) {
+      console.error('Failed to update user:', error);
+      return { success: false, message: 'Server error' };
+    }
+  },
+
+  deleteUser: async (userId: string) => {
+    try {
+      const response = await fetch(`http://localhost:3000/users/${userId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success) {
+        set((state: any) => ({
+          users: state.users.filter((u: any) => u._id !== userId)
+        }));
+        return { success: true };
+      }
+      return { success: false, message: data.message };
+    } catch (error) {
+      console.error('Failed to delete user:', error);
+      return { success: false, message: 'Server error' };
     }
   }
 }));

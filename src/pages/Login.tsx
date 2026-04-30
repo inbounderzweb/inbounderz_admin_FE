@@ -97,6 +97,15 @@ const Login = () => {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+              <div className="flex justify-end">
+                <button 
+                  type="button"
+                  onClick={() => useAppStore.getState().setActivePage('forgot-password')}
+                  className="text-[11px] text-white/30 hover:text-blue-500 transition-colors"
+                >
+                  Forgot password?
+                </button>
+              </div>
             </div>
 
             {loginError && (

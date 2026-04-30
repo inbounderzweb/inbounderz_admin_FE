@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, Download, Mail, Phone, Eye, Check, X, Trash2, Calendar, Loader2, FileText } from 'lucide-react';
-import { useDataStore } from '../store/useStore';
+import { useAppStore, useDataStore } from '../store/useStore';
 import clsx from 'clsx';
 
 const Careers = () => {
+  const { user } = useAppStore();
   const {
     careers,
     careersPagination: pagination,
@@ -123,58 +124,66 @@ const Careers = () => {
             </div>
           )}
 
-          <button
-            onClick={async () => {
-              await bulkUpdateCareerStatus(selectedIds, 'reviewed');
-              setSelectedIds([]);
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 border border-[var(--color-border)] rounded-lg bg-[var(--color-sidebar-bg)] text-[12px] font-medium hover:bg-[var(--color-page-bg)] disabled:opacity-50 transition-colors"
-            disabled={selectedIds.length === 0}
-          >
-            <Check size={14} /> Mark Read
-          </button>
+          {(user?.role === 'admin' || (user?.permissions as any)?.careers?.edit) && (
+            <>
+              <button
+                onClick={async () => {
+                  await bulkUpdateCareerStatus(selectedIds, 'reviewed');
+                  setSelectedIds([]);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 border border-[var(--color-border)] rounded-lg bg-[var(--color-sidebar-bg)] text-[12px] font-medium hover:bg-[var(--color-page-bg)] disabled:opacity-50 transition-colors"
+                disabled={selectedIds.length === 0}
+              >
+                <Check size={14} /> Mark Read
+              </button>
 
-          <button
-            onClick={async () => {
-              await bulkUpdateCareerStatus(selectedIds, 'selected');
-              setSelectedIds([]);
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 border border-green-200 dark:border-green-900/30 rounded-lg bg-green-50 dark:bg-green-900/10 text-green-700 dark:text-green-400 text-[12px] font-medium hover:bg-green-100 dark:hover:bg-green-900/20 disabled:opacity-50 transition-colors"
-            disabled={selectedIds.length === 0}
-          >
-            <Check size={14} /> Mark Selected
-          </button>
+              <button
+                onClick={async () => {
+                  await bulkUpdateCareerStatus(selectedIds, 'selected');
+                  setSelectedIds([]);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 border border-green-200 dark:border-green-900/30 rounded-lg bg-green-50 dark:bg-green-900/10 text-green-700 dark:text-green-400 text-[12px] font-medium hover:bg-green-100 dark:hover:bg-green-900/20 disabled:opacity-50 transition-colors"
+                disabled={selectedIds.length === 0}
+              >
+                <Check size={14} /> Mark Selected
+              </button>
 
-          <button
-            onClick={async () => {
-              await bulkUpdateCareerStatus(selectedIds, 'unselected');
-              setSelectedIds([]);
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 dark:border-gray-700/50 rounded-lg bg-gray-50 dark:bg-gray-800/30 text-gray-700 dark:text-gray-400 text-[12px] font-medium hover:bg-gray-100 dark:hover:bg-gray-800/50 disabled:opacity-50 transition-colors"
-            disabled={selectedIds.length === 0}
-          >
-            <X size={14} /> Mark Unselected
-          </button>
+              <button
+                onClick={async () => {
+                  await bulkUpdateCareerStatus(selectedIds, 'unselected');
+                  setSelectedIds([]);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 dark:border-gray-700/50 rounded-lg bg-gray-50 dark:bg-gray-800/30 text-gray-700 dark:text-gray-400 text-[12px] font-medium hover:bg-gray-100 dark:hover:bg-gray-800/50 disabled:opacity-50 transition-colors"
+                disabled={selectedIds.length === 0}
+              >
+                <X size={14} /> Mark Unselected
+              </button>
+            </>
+          )}
 
-          <button
-            onClick={async () => {
-              if (window.confirm(`Are you sure you want to delete ${selectedIds.length} applications?`)) {
-                await bulkDeleteCareers(selectedIds);
-                setSelectedIds([]);
-              }
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 border border-red-100 dark:border-red-900/30 rounded-lg bg-red-50 dark:bg-red-950/20 text-red-600 text-[12px] font-medium hover:bg-red-100 dark:hover:bg-red-900/30 disabled:opacity-50 transition-colors"
-            disabled={selectedIds.length === 0}
-          >
-            <Trash2 size={14} /> Delete
-          </button>
+          {(user?.role === 'admin' || (user?.permissions as any)?.careers?.delete) && (
+            <button
+              onClick={async () => {
+                if (window.confirm(`Are you sure you want to delete ${selectedIds.length} applications?`)) {
+                  await bulkDeleteCareers(selectedIds);
+                  setSelectedIds([]);
+                }
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-red-100 dark:border-red-900/30 rounded-lg bg-red-50 dark:bg-red-950/20 text-red-600 text-[12px] font-medium hover:bg-red-100 dark:hover:bg-red-900/30 disabled:opacity-50 transition-colors"
+              disabled={selectedIds.length === 0}
+            >
+              <Trash2 size={14} /> Delete
+            </button>
+          )}
 
-          <button 
-            onClick={() => exportCareers(searchTerm, statusFilter, dateFilter, customStartDate, customEndDate)}
-            className="flex items-center gap-1.5 px-3 py-1.5 border border-[var(--color-border)] rounded-lg bg-[var(--color-sidebar-bg)] text-[12px] font-medium hover:bg-[var(--color-page-bg)] transition-colors"
-          >
-            <Download size={14} /> Export
-          </button>
+          {(user?.role === 'admin' || (user?.permissions as any)?.careers?.export) && (
+            <button 
+              onClick={() => exportCareers(searchTerm, statusFilter, dateFilter, customStartDate, customEndDate)}
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-[var(--color-border)] rounded-lg bg-[var(--color-sidebar-bg)] text-[12px] font-medium hover:bg-[var(--color-page-bg)] transition-colors"
+            >
+              <Download size={14} /> Export
+            </button>
+          )}
         </div>
       </div>
 
@@ -253,11 +262,11 @@ const Careers = () => {
                     </td>
                     <td className="p-3">
                       <span className={clsx(
-                        "px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide uppercase",
-                        c.status === 'new' ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" :
-                        c.status === 'selected' ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
-                        c.status === 'unselected' ? "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400" :
-                        "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                        "text-[10px] font-bold tracking-wider uppercase",
+                        c.status === 'new' ? "text-blue-600 dark:text-blue-400" :
+                        c.status === 'selected' ? "text-green-600 dark:text-green-400" :
+                        c.status === 'unselected' ? "text-gray-500 dark:text-gray-500" :
+                        "text-yellow-600 dark:text-yellow-400"
                       )}>
                         {c.status}
                       </span>
@@ -280,27 +289,44 @@ const Careers = () => {
                         >
                           <Eye size={14} />
                         </button>
-                        <button
-                          onClick={() => bulkUpdateCareerStatus([c._id], 'reviewed')}
-                          className="p-1.5 text-gray-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg transition-colors"
-                          title="Mark Reviewed"
-                        >
-                          <Check size={14} />
-                        </button>
-                        <button
-                          onClick={() => bulkUpdateCareerStatus([c._id], 'selected')}
-                          className="p-1.5 text-gray-500 hover:bg-green-100 dark:hover:bg-green-900/20 hover:text-green-600 dark:hover:text-green-400 rounded-lg transition-colors"
-                          title="Mark Selected"
-                        >
-                          <Check size={14} />
-                        </button>
-                        <button
-                          onClick={() => bulkUpdateCareerStatus([c._id], 'unselected')}
-                          className="p-1.5 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 rounded-lg transition-colors"
-                          title="Mark Unselected"
-                        >
-                          <X size={14} />
-                        </button>
+                        {(user?.role === 'admin' || (user?.permissions as any)?.careers?.edit) && (
+                          <>
+                            <button
+                              onClick={() => bulkUpdateCareerStatus([c._id], 'reviewed')}
+                              className="p-1.5 text-gray-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg transition-colors"
+                              title="Mark Reviewed"
+                            >
+                              <Check size={14} />
+                            </button>
+                            <button
+                              onClick={() => bulkUpdateCareerStatus([c._id], 'selected')}
+                              className="p-1.5 text-gray-500 hover:bg-green-100 dark:hover:bg-green-900/20 hover:text-green-600 dark:hover:text-green-400 rounded-lg transition-colors"
+                              title="Mark Selected"
+                            >
+                              <Check size={14} />
+                            </button>
+                            <button
+                              onClick={() => bulkUpdateCareerStatus([c._id], 'unselected')}
+                              className="p-1.5 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 rounded-lg transition-colors"
+                              title="Mark Unselected"
+                            >
+                              <X size={14} />
+                            </button>
+                          </>
+                        )}
+                        {(user?.role === 'admin' || (user?.permissions as any)?.careers?.delete) && (
+                          <button
+                            onClick={() => {
+                              if (window.confirm('Are you sure you want to delete this application?')) {
+                                bulkDeleteCareers([c._id]);
+                              }
+                            }}
+                            className="p-1.5 text-gray-500 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 rounded-lg transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
                         <button
                           onClick={() => {
                             if (window.confirm('Are you sure you want to delete this application?')) {

@@ -14,25 +14,39 @@ import { clsx } from 'clsx';
 import { useEffect } from 'react';
 
 const Sidebar = () => {
-  const { sidebarCollapsed, toggleSidebar, activePage, setActivePage, logout } = useAppStore();
+  const { sidebarCollapsed, toggleSidebar, activePage, setActivePage, logout, user, navigation } = useAppStore();
   const { unreadEnquiriesCount, unreadCareersCount, fetchUnreadCounts } = useDataStore() as any;
 
   useEffect(() => {
     fetchUnreadCounts();
-    // Optional: could set up an interval to poll for updates
-    // const interval = setInterval(fetchUnreadCounts, 60000);
-    // return () => clearInterval(interval);
   }, [fetchUnreadCounts]);
 
-  const navItems = [
+  const allNavItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid, section: 'Main' },
     { id: 'enquiries', label: 'Enquiries', icon: MessageSquare, section: 'Main', badge: unreadEnquiriesCount > 0 ? unreadEnquiriesCount : null },
     { id: 'careers', label: 'Careers', icon: FileText, section: 'Main', badge: unreadCareersCount > 0 ? unreadCareersCount : null },
-    { id: 'clients', label: 'Clients', icon: Users, section: 'Main' },
     { id: 'users', label: 'Users', icon: Users, section: 'Main' },
     { id: 'analytics', label: 'Analytics', icon: BarChart3, section: 'Reports' },
     { id: 'settings', label: 'Settings', icon: Settings, section: 'System' },
   ];
+
+  const navItems = allNavItems.filter(item => {
+    // If the server provided a specific navigation list, use it for filtering
+    if (navigation && navigation.length > 0) {
+      return navigation.some((nav: any) => nav.id === item.id);
+    }
+
+    // Fallback to local filtering if navigation list is not provided
+    if (user?.role === 'admin') return true;
+    const permissions = (user?.permissions as any);
+    if (!permissions || typeof permissions[item.id] === 'undefined') {
+      return ['dashboard', 'enquiries', 'careers'].includes(item.id);
+    }
+    if (typeof permissions[item.id] === 'boolean') {
+      return permissions[item.id];
+    }
+    return permissions[item.id]?.view ?? false;
+  });
 
   return (
     <aside
@@ -108,13 +122,22 @@ const Sidebar = () => {
         })}
       </div>
 
-      <div className="mt-auto border-t border-[var(--color-border)] p-2">
+      <div className="border-t border-[var(--color-border)] p-2">
         <button
           onClick={logout}
-          className="flex items-center gap-3 py-2 px-4 mx-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 w-[calc(100%-12px)] transition-colors"
+          className={clsx(
+            "flex items-center gap-3 py-2.5 px-3 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 w-full transition-colors group relative",
+            sidebarCollapsed && "justify-center px-0"
+          )}
+          title={sidebarCollapsed ? "Logout" : undefined}
         >
           <LogOut size={18} />
           {!sidebarCollapsed && <span className="text-[13px] font-medium">Logout</span>}
+          {sidebarCollapsed && (
+            <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 shadow-lg">
+              Logout
+            </div>
+          )}
         </button>
       </div>
     </aside>

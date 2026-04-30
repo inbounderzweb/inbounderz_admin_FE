@@ -4,7 +4,7 @@ import { useAppStore, useDataStore } from '../store/useStore';
 import { clsx } from 'clsx';
 
 const Topbar = () => {
-  const { darkMode, toggleDarkMode, setActivePage } = useAppStore();
+  const { darkMode, toggleDarkMode, setActivePage, user } = useAppStore();
   const { 
     serverNotifications, 
     unreadNotificationsCount, 
@@ -17,6 +17,13 @@ const Topbar = () => {
 
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const getInitials = (name: string) => {
+    if (!name) return '??';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
 
   // Filter notifications to only show unread or most recent
   // But if the user marks as read, they expect it to be "handled" and removed from the priority list
@@ -227,8 +234,18 @@ const Topbar = () => {
 
         <div className="w-[0.5px] h-5 bg-black/10 mx-1" />
 
-        <div className="w-7.5 h-7.5 bg-blue-700 rounded-full flex items-center justify-center text-[11px] font-semibold text-white cursor-pointer shrink-0">
-          SA
+        <div className="flex items-center gap-2 px-1">
+          <div className="hidden sm:flex flex-col items-end">
+            <span className="text-[11px] font-bold text-gray-900 dark:text-white leading-tight">
+              {user?.name || 'Super Admin'}
+            </span>
+            <span className="text-[9px] text-gray-500 font-medium capitalize">
+              {user?.role || 'User'}
+            </span>
+          </div>
+          <div className="w-8 h-8 bg-blue-700 rounded-full flex items-center justify-center text-[11px] font-bold text-white cursor-pointer shrink-0 shadow-sm hover:ring-2 hover:ring-blue-100 dark:hover:ring-blue-900/30 transition-all">
+            {getInitials(user?.name || 'Super Admin')}
+          </div>
         </div>
       </div>
     </header>

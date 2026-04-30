@@ -5,7 +5,10 @@ import Dashboard from './pages/Dashboard';
 import Enquiries from './pages/Enquiries';
 import Careers from './pages/Careers';
 import Users from './pages/Users';
+import Analytics from './pages/Analytics';
+import Settings from './pages/Settings';
 import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
 
 function App() {
   const { activePage, isAuthenticated, user, isAuthLoading, checkAuth, setActivePage, darkMode } = useAppStore();
@@ -23,6 +26,33 @@ function App() {
     }
   }, [darkMode]);
 
+  // Redirect users if they try to access pages they don't have permission for
+  useEffect(() => {
+    if (isAuthenticated && user?.role !== 'admin') {
+      const permissions = (user?.permissions as any) || {};
+      
+      // If the permission key for this page is completely missing, use default access fallback
+      if (typeof permissions[activePage] === 'undefined') {
+        const defaultAccess = ['dashboard', 'enquiries', 'careers'].includes(activePage);
+        if (!defaultAccess) setActivePage('dashboard');
+        return;
+      }
+
+      // If it's the old boolean format and it's false, redirect
+      if (typeof permissions[activePage] === 'boolean') {
+        if (permissions[activePage] === false && activePage !== 'dashboard') {
+          setActivePage('dashboard');
+        }
+        return;
+      }
+
+      // If the page exists in granular permissions and 'view' is set to false, redirect to dashboard
+      if (activePage !== 'dashboard' && permissions[activePage]?.view === false) {
+        setActivePage('dashboard');
+      }
+    }
+  }, [activePage, user, setActivePage, isAuthenticated]);
+
   // Loading state while checking token
   if (isAuthLoading) {
     return (
@@ -35,35 +65,13 @@ function App() {
     );
   }
 
-  // If not authenticated, always show Login regardless of activePage
+  // If not authenticated, show Login or ForgotPassword
   if (!isAuthenticated) {
+    if (activePage === 'forgot-password') return <ForgotPassword />;
     return <Login />;
   }
 
-  // If authenticated but role is not admin, show access restricted
-  if (user?.role !== 'admin') {
-    return (
-      <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center text-white p-6 text-center">
-        <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mb-6">
-          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m0 0v2m0-2h2m-2 0H10m4-6a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-          </svg>
-        </div>
-        <h1 className="text-2xl font-bold mb-2 font-['Syne']">Access Restricted</h1>
-        <p className="text-white/50 max-w-md text-sm leading-relaxed">
-          This portal is reserved for administrators. Your account <span className="text-[#f5c842] font-medium">{user?.email}</span> does not have the required permissions.
-        </p>
-        <button 
-          onClick={() => useAppStore.getState().logout()}
-          className="mt-8 px-8 py-3 bg-[#f5c842] hover:bg-[#e8752a] text-black rounded-xl text-sm font-bold transition-all transform active:scale-95"
-        >
-          Logout & Switch Account
-        </button>
-      </div>
-    );
-  }
-
-  // If we get here, user is authenticated and is an admin
+  // If we get here, user is authenticated
   // We should ensure activePage is not 'login' since they are authenticated
   if (activePage === 'login') {
     setActivePage('dashboard');
@@ -79,6 +87,10 @@ function App() {
         return <Careers />;
       case 'users':
         return <Users />;
+      case 'analytics':
+        return <Analytics />;
+      case 'settings':
+        return <Settings />;
       default:
         return <Dashboard />;
     }
