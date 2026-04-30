@@ -109,19 +109,19 @@ const Enquiries = () => {
 
         {dateFilter === 'custom' && (
           <div className="flex items-center gap-2">
-            <input 
-              type="date" 
+            <input
+              type="date"
               value={customStartDate}
               onChange={(e) => setCustomStartDate(e.target.value)}
-              className="px-2.5 py-1.5 border border-[var(--color-border)] rounded-lg bg-[var(--color-sidebar-bg)] text-[12px] outline-none transition-colors" 
+              className="px-2.5 py-1.5 border border-[var(--color-border)] rounded-lg bg-[var(--color-sidebar-bg)] text-[12px] outline-none transition-colors"
               title="Start Date"
             />
             <span className="text-gray-500 text-[12px]">to</span>
-            <input 
-              type="date" 
+            <input
+              type="date"
               value={customEndDate}
               onChange={(e) => setCustomEndDate(e.target.value)}
-              className="px-2.5 py-1.5 border border-[var(--color-border)] rounded-lg bg-[var(--color-sidebar-bg)] text-[12px] outline-none transition-colors" 
+              className="px-2.5 py-1.5 border border-[var(--color-border)] rounded-lg bg-[var(--color-sidebar-bg)] text-[12px] outline-none transition-colors"
               title="End Date"
             />
           </div>
@@ -180,7 +180,7 @@ const Enquiries = () => {
         )}
 
         {(user?.role === 'admin' || (user?.permissions as any)?.enquiries?.export) && (
-          <button 
+          <button
             onClick={() => exportEnquiries(searchTerm, statusFilter, dateFilter, customStartDate, customEndDate)}
             className="flex items-center gap-1.5 px-3 py-1.5 border border-[var(--color-border)] rounded-lg bg-[var(--color-sidebar-bg)] text-[12px] font-medium hover:bg-[var(--color-page-bg)] transition-colors"
           >
@@ -230,9 +230,9 @@ const Enquiries = () => {
                     key={enq._id}
                     className={clsx(
                       "border-t border-[var(--color-border)] transition-colors group",
-                      enq.status === 'new' ? "bg-blue-50/10 dark:bg-blue-900/5" : 
-                      enq.status === 'selected' ? "bg-green-100 dark:bg-green-900/20" : 
-                      "hover:bg-gray-50/50 dark:hover:bg-white/5"
+                      enq.status === 'new' ? "bg-blue-50/10 dark:bg-blue-900/5" :
+                        enq.status === 'selected' ? "bg-green-100 dark:bg-green-900/20" :
+                          "hover:bg-gray-50/50 dark:hover:bg-white/5"
                     )}
                   >
                     <td className="p-3">
@@ -251,9 +251,11 @@ const Enquiries = () => {
                       <p className="text-[10px] text-gray-400 uppercase tracking-tight">{enq.designation || 'Visitor'}</p>
                     </td>
                     <td className="p-3 text-[12px]">
-                      <div className="flex items-center gap-1.5 mb-1 text-gray-900 dark:text-white">
-                        <Mail size={12} className="text-gray-400" />
-                        <span className="font-medium">{enq.email}</span>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Mail size={12} className="text-gray-400 shrink-0" />
+                        <span className="font-semibold">
+                          {enq.email}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1.5 text-gray-500">
                         <Phone size={12} className="text-gray-400" />
@@ -274,9 +276,9 @@ const Enquiries = () => {
                       <span className={clsx(
                         "text-[10px] font-bold tracking-wider uppercase",
                         enq.status === 'new' ? "text-blue-600 dark:text-blue-400" :
-                        enq.status === 'selected' ? "text-green-600 dark:text-green-400" :
-                        enq.status === 'unselected' ? "text-gray-500 dark:text-gray-500" :
-                        "text-yellow-600 dark:text-yellow-400"
+                          enq.status === 'selected' ? "text-green-600 dark:text-green-400" :
+                            enq.status === 'unselected' ? "text-gray-500 dark:text-gray-500" :
+                              "text-yellow-600 dark:text-yellow-400"
                       )}>
                         {enq.status}
                       </span>
@@ -286,7 +288,7 @@ const Enquiries = () => {
                     </td>
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
+                        <button
                           onClick={async () => {
                             setViewEnquiry(enq);
                             await markNotificationByReferenceAsRead(enq._id);
@@ -294,7 +296,7 @@ const Enquiries = () => {
                               await bulkUpdateEnquiryStatus([enq._id], 'reviewed');
                             }
                           }}
-                          className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors" 
+                          className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
                           title="View Details"
                         >
                           <Eye size={14} />
@@ -404,14 +406,14 @@ const Enquiries = () => {
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
               <h2 className="text-lg font-bold text-gray-900 dark:text-white">Enquiry Details</h2>
-              <button 
+              <button
                 onClick={() => setViewEnquiry(null)}
                 className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
               >
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className="p-6 overflow-y-auto space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -456,7 +458,7 @@ const Enquiries = () => {
             </div>
 
             <div className="p-4 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-2 bg-gray-50 dark:bg-gray-900/50">
-              <button 
+              <button
                 onClick={() => setViewEnquiry(null)}
                 className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
               >

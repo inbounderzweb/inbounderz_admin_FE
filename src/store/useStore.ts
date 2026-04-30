@@ -103,9 +103,11 @@ export const useAppStore = create<AppState>()(
             method: 'POST',
             credentials: 'include'
           });
-          set({ user: null, isAuthenticated: false, navigation: [], activePage: 'login' });
         } catch (error) {
           console.error('Logout failed:', error);
+        } finally {
+          // Always clear state locally regardless of server success
+          set({ user: null, isAuthenticated: false, navigation: [], activePage: 'login' });
         }
       },
 
@@ -115,6 +117,12 @@ export const useAppStore = create<AppState>()(
           const response = await fetch('http://localhost:3000/auth/me', {
             credentials: 'include'
           });
+          
+          if (response.status === 401) {
+             set({ user: null, isAuthenticated: false, navigation: [], activePage: 'login' });
+             return;
+          }
+
           const data = await response.json();
           if (data.success) {
             set({ 
@@ -123,10 +131,10 @@ export const useAppStore = create<AppState>()(
               navigation: data.navigation || []
             });
           } else {
-            set({ user: null, isAuthenticated: false, navigation: [] });
+            set({ user: null, isAuthenticated: false, navigation: [], activePage: 'login' });
           }
         } catch (error) {
-          set({ user: null, isAuthenticated: false });
+          set({ user: null, isAuthenticated: false, navigation: [], activePage: 'login' });
         } finally {
           set({ isAuthLoading: false });
         }

@@ -242,10 +242,12 @@ const Careers = () => {
                     </td>
                     <td className="p-3">
                       <div className="flex items-center gap-2">
-                        <Mail size={14} className="text-gray-400" />
-                        <span className="text-gray-900 dark:text-white font-medium">{c.email}</span>
+                        <Mail size={14} className="text-gray-400 shrink-0" />
+                        <span className="font-semibold">
+                          {c.email}
+                        </span>
                         {c.status === 'new' && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0"></span>
                         )}
                       </div>
                     </td>
