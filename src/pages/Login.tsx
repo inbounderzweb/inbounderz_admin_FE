@@ -99,13 +99,6 @@ const Login = () => {
             <div className="space-y-2">
               <div className="flex justify-between items-center px-1">
                 <label className="block text-[11px] font-bold text-white/30 uppercase tracking-[0.2em]">Password</label>
-                <button
-                  type="button"
-                  onClick={() => setActivePage('forgot-password')}
-                  className="text-[11px] font-bold text-[#f7c32e] hover:text-[#f7c32e]/80 transition-colors"
-                >
-                  Forgot password?
-                </button>
               </div>
               <div className="relative group">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-white/20 group-focus-within:text-[#f7c32e] transition-colors" />
@@ -128,6 +121,15 @@ const Login = () => {
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
+                <div className='w-full flex justify-end m-auto mt-2'>
+                  <button
+                    type="button"
+                    onClick={() => setActivePage('forgot-password')}
+                    className="text-[11px] font-bold text-[#f7c32e] hover:text-[#f7c32e]/80 transition-colors"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
               </div>
               {passwordError && <p className="text-[11px] text-red-500 font-bold ml-1">{passwordError}</p>}
             </div>

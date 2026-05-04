@@ -51,7 +51,7 @@ const Careers = () => {
   };
 
   const toggleSelect = (id: string) => {
-    setSelectedIds(prev => 
+    setSelectedIds(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
@@ -61,22 +61,22 @@ const Careers = () => {
       {/* Header & Filters */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-xl font-bold text-gray-900 dark:text-white font-['Syne']">Careers</h1>
-        
+
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 w-3.5 h-3.5" />
-            <input 
-              type="text" 
-              placeholder="Search careers..." 
+            <input
+              type="text"
+              placeholder="Search careers..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 pr-3 py-1.5 border border-[var(--color-border)] rounded-lg bg-[var(--color-sidebar-bg)] text-[12px] outline-none w-48 transition-colors" 
+              className="pl-8 pr-3 py-1.5 border border-[var(--color-border)] rounded-lg bg-[var(--color-sidebar-bg)] text-[12px] outline-none w-48 transition-colors"
             />
           </div>
-          
+
           <div className="relative">
             <Filter className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 w-3.5 h-3.5" />
-            <select 
+            <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="pl-8 pr-6 py-1.5 border border-[var(--color-border)] rounded-lg bg-[var(--color-sidebar-bg)] text-[12px] outline-none appearance-none cursor-pointer transition-colors"
@@ -106,19 +106,19 @@ const Careers = () => {
 
           {dateFilter === 'custom' && (
             <div className="flex items-center gap-2">
-              <input 
-                type="date" 
+              <input
+                type="date"
                 value={customStartDate}
                 onChange={(e) => setCustomStartDate(e.target.value)}
-                className="px-2.5 py-1.5 border border-[var(--color-border)] rounded-lg bg-[var(--color-sidebar-bg)] text-[12px] outline-none transition-colors" 
+                className="px-2.5 py-1.5 border border-[var(--color-border)] rounded-lg bg-[var(--color-sidebar-bg)] text-[12px] outline-none transition-colors"
                 title="Start Date"
               />
               <span className="text-gray-500 text-[12px]">to</span>
-              <input 
-                type="date" 
+              <input
+                type="date"
                 value={customEndDate}
                 onChange={(e) => setCustomEndDate(e.target.value)}
-                className="px-2.5 py-1.5 border border-[var(--color-border)] rounded-lg bg-[var(--color-sidebar-bg)] text-[12px] outline-none transition-colors" 
+                className="px-2.5 py-1.5 border border-[var(--color-border)] rounded-lg bg-[var(--color-sidebar-bg)] text-[12px] outline-none transition-colors"
                 title="End Date"
               />
             </div>
@@ -177,7 +177,7 @@ const Careers = () => {
           )}
 
           {(user?.role === 'admin' || (user?.permissions as any)?.careers?.export) && (
-            <button 
+            <button
               onClick={() => exportCareers(searchTerm, statusFilter, dateFilter, customStartDate, customEndDate)}
               className="flex items-center gap-1.5 px-3 py-1.5 border border-[var(--color-border)] rounded-lg bg-[var(--color-sidebar-bg)] text-[12px] font-medium hover:bg-[var(--color-page-bg)] transition-colors"
             >
@@ -193,14 +193,14 @@ const Careers = () => {
             <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
           </div>
         )}
-        
+
         <div className="overflow-x-auto min-h-[300px]">
           <table className="w-full text-left border-collapse text-[13px]">
             <thead>
               <tr className="border-b border-[var(--color-border)] bg-gray-50/50 dark:bg-white/5 text-gray-500 font-medium">
                 <th className="p-3 w-10">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     className="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-800"
                     checked={careers.length > 0 && selectedIds.length === careers.length}
                     onChange={toggleSelectAll}
@@ -223,18 +223,18 @@ const Careers = () => {
                 </tr>
               ) : (
                 careers.map((c: any) => (
-                  <tr 
-                    key={c._id} 
+                  <tr
+                    key={c._id}
                     className={clsx(
                       "border-b border-[var(--color-border)] group transition-colors",
-                      c.status === 'new' ? "bg-blue-50/10 dark:bg-blue-900/5" : 
-                      c.status === 'selected' ? "bg-green-100 dark:bg-green-900/20" : 
-                      "hover:bg-gray-50/50 dark:hover:bg-white/5"
+                      c.status === 'new' ? "bg-blue-50/10 dark:bg-blue-900/5" :
+                        c.status === 'selected' ? "bg-green-100 dark:bg-green-900/20" :
+                          "hover:bg-gray-50/50 dark:hover:bg-white/5"
                     )}
                   >
                     <td className="p-3">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         className="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-800"
                         checked={selectedIds.includes(c._id)}
                         onChange={() => toggleSelect(c._id)}
@@ -266,9 +266,9 @@ const Careers = () => {
                       <span className={clsx(
                         "text-[10px] font-bold tracking-wider uppercase",
                         c.status === 'new' ? "text-blue-600 dark:text-blue-400" :
-                        c.status === 'selected' ? "text-green-600 dark:text-green-400" :
-                        c.status === 'unselected' ? "text-gray-500 dark:text-gray-500" :
-                        "text-yellow-600 dark:text-yellow-400"
+                          c.status === 'selected' ? "text-green-600 dark:text-green-400" :
+                            c.status === 'unselected' ? "text-gray-500 dark:text-gray-500" :
+                              "text-yellow-600 dark:text-yellow-400"
                       )}>
                         {c.status}
                       </span>
@@ -278,7 +278,7 @@ const Careers = () => {
                     </td>
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
+                        <button
                           onClick={async () => {
                             setViewCareer(c);
                             await markNotificationByReferenceAsRead(c._id);
@@ -286,7 +286,7 @@ const Careers = () => {
                               await bulkUpdateCareerStatus([c._id], 'reviewed');
                             }
                           }}
-                          className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors" 
+                          className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
                           title="View Details"
                         >
                           <Eye size={14} />
@@ -316,7 +316,7 @@ const Careers = () => {
                             </button>
                           </>
                         )}
-                        {(user?.role === 'admin' || (user?.permissions as any)?.careers?.delete) && (
+                        {/* {(user?.role === 'admin' || (user?.permissions as any)?.careers?.delete) && (
                           <button
                             onClick={() => {
                               if (window.confirm('Are you sure you want to delete this application?')) {
@@ -328,7 +328,7 @@ const Careers = () => {
                           >
                             <Trash2 size={14} />
                           </button>
-                        )}
+                        )} */}
                         <button
                           onClick={() => {
                             if (window.confirm('Are you sure you want to delete this application?')) {
@@ -407,14 +407,14 @@ const Careers = () => {
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
               <h2 className="text-lg font-bold text-gray-900 dark:text-white">Career Application Details</h2>
-              <button 
+              <button
                 onClick={() => setViewCareer(null)}
                 className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
               >
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className="p-6 overflow-y-auto space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -444,7 +444,7 @@ const Careers = () => {
             </div>
 
             <div className="p-4 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-2 bg-gray-50 dark:bg-gray-900/50">
-              <button 
+              <button
                 onClick={() => setViewCareer(null)}
                 className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
               >

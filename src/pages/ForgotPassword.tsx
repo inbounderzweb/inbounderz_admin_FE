@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, ArrowLeft, ShieldCheck, ShieldAlert, KeyRound, Lock, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Mail, ArrowLeft, ShieldCheck, ShieldAlert, KeyRound, Lock, CheckCircle2, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { useAppStore } from '../store/useStore';
 import { clsx } from 'clsx';
 
@@ -10,6 +10,8 @@ const ForgotPassword = () => {
   const [token, setToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: 'info' as 'success' | 'error' | 'info' });
 
@@ -22,7 +24,7 @@ const ForgotPassword = () => {
     setLoading(false);
 
     if (res.success) {
-      setMessage({ text: 'Check your email for a reset link.', type: 'success' });
+      setMessage({ text: 'Check your email for the reset code.', type: 'success' });
       setStep('reset');
       if ((res as any).devToken) setToken((res as any).devToken);
     } else {
@@ -32,6 +34,10 @@ const ForgotPassword = () => {
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!token) {
+      setMessage({ text: 'Please enter the reset code', type: 'error' });
+      return;
+    }
     if (newPassword !== confirmPassword) {
       setMessage({ text: 'Passwords do not match', type: 'error' });
       return;
@@ -49,7 +55,7 @@ const ForgotPassword = () => {
       setMessage({ text: 'Password updated. You can now sign in.', type: 'success' });
       setTimeout(() => setActivePage('login'), 2000);
     } else {
-      setMessage({ text: res.message || 'Failed to update password', type: 'error' });
+      setMessage({ text: res.message || 'Invalid or expired code', type: 'error' });
     }
   };
 
@@ -59,22 +65,22 @@ const ForgotPassword = () => {
   ];
 
   return (
-    <div className="min-h-screen w-full bg-[#050505] font-['Inter'] text-white flex items-center justify-center p-6">
+    <div className="min-h-screen w-full bg-[#050505] font-['DM_Sans'] text-white flex items-center justify-center p-6">
       <div className="fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_50%,_#111111_0%,_#050505_100%)] opacity-50" />
       
       <div className="relative z-10 w-full max-w-[440px] animate-in fade-in zoom-in-95 duration-500">
-        <div className="bg-[#111111]/80 backdrop-blur-xl border border-white/5 rounded-[32px] p-8 md:p-10 shadow-2xl">
+        <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-[32px] p-8 md:p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.7)]">
           <div className="mb-8 text-center">
-            <div className="w-16 h-16 bg-blue-600/10 border border-blue-600/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <KeyRound className="text-blue-500 w-8 h-8" />
+            <div className="w-16 h-16 bg-[#f7c32e]/10 border border-[#f7c32e]/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <KeyRound className="text-[#f7c32e] w-8 h-8" />
             </div>
-            <h2 className="text-2xl font-bold tracking-tight mb-2">
-              {step === 'request' ? 'Reset your password' : 'Create a new password'}
+            <h2 className="text-3xl font-bold font-['Syne'] tracking-tight mb-2">
+              {step === 'request' ? 'Reset password' : 'Set new password'}
             </h2>
             <p className="text-white/40 text-[14px]">
               {step === 'request' 
-                ? 'Enter your email and we’ll send a reset link' 
-                : 'Please set a secure password for your account'}
+                ? 'Enter your email and we’ll send a reset code' 
+                : 'Enter the code from your email to reset your password'}
             </p>
           </div>
 
@@ -95,7 +101,7 @@ const ForgotPassword = () => {
               <div className="space-y-2">
                 <label className="block text-[11px] font-bold text-white/30 uppercase tracking-[0.2em] ml-1">Email Address</label>
                 <div className="relative group">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-white/20 group-focus-within:text-blue-500 transition-colors" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-white/20 group-focus-within:text-[#f7c32e] transition-colors" />
                   <input
                     type="email"
                     placeholder="you@company.com"
@@ -103,7 +109,7 @@ const ForgotPassword = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     autoFocus
-                    className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-[15px] outline-none focus:border-blue-600/50 focus:bg-white/[0.05] transition-all placeholder:text-white/10"
+                    className="w-full bg-black/60 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-[15px] text-white outline-none transition-all placeholder:text-white/30 autofill:shadow-[0_0_0_1000px_#050505_inset_!important] [text-fill-color:white_!important] [-webkit-text-fill-color:white_!important] focus:border-[#f7c32e]/50 focus:bg-black/80"
                   />
                 </div>
               </div>
@@ -111,9 +117,9 @@ const ForgotPassword = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-[15px] tracking-wide transition-all active:scale-[0.98] disabled:opacity-50 shadow-xl shadow-blue-600/20 flex items-center justify-center gap-2"
+                className="w-full py-4 rounded-xl bg-[#f7c32e] hover:bg-[#f7c32e]/90 text-black font-bold text-[15px] tracking-wide transition-all active:scale-[0.98] disabled:opacity-50 shadow-xl shadow-[#f7c32e]/10 flex items-center justify-center gap-2"
               >
-                {loading ? "Sending link..." : "Send reset link"}
+                {loading ? "Sending..." : "Send Reset Code"}
                 {!loading && <ArrowRight size={18} />}
               </button>
             </form>
@@ -121,32 +127,62 @@ const ForgotPassword = () => {
             <form onSubmit={handleReset} className="space-y-6">
               <div className="space-y-4">
                 <div className="space-y-2">
+                  <label className="block text-[11px] font-bold text-white/30 uppercase tracking-[0.2em] ml-1">Reset Code</label>
+                  <div className="relative group">
+                    <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-white/20 group-focus-within:text-[#f7c32e] transition-colors" />
+                    <input
+                      type="text"
+                      placeholder="Enter 6-digit code"
+                      value={token}
+                      onChange={(e) => setToken(e.target.value)}
+                      required
+                      autoFocus
+                      className="w-full bg-black/60 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-[15px] text-white outline-none transition-all placeholder:text-white/30 autofill:shadow-[0_0_0_1000px_#050505_inset_!important] [text-fill-color:white_!important] [-webkit-text-fill-color:white_!important] focus:border-[#f7c32e]/50 focus:bg-black/80"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
                   <label className="block text-[11px] font-bold text-white/30 uppercase tracking-[0.2em] ml-1">New Password</label>
                   <div className="relative group">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-white/20 group-focus-within:text-blue-500 transition-colors" />
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-white/20 group-focus-within:text-[#f7c32e] transition-colors" />
                     <input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       placeholder="Enter new password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       required
-                      className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-[15px] outline-none focus:border-blue-600/50 focus:bg-white/[0.05] transition-all placeholder:text-white/10"
+                      className="w-full bg-black/60 border border-white/10 rounded-xl py-4 pl-12 pr-12 text-[15px] text-white outline-none transition-all placeholder:text-white/30 autofill:shadow-[0_0_0_1000px_#050505_inset_!important] [text-fill-color:white_!important] [-webkit-text-fill-color:white_!important] focus:border-[#f7c32e]/50 focus:bg-black/80"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-[#f7c32e] transition-all z-10 p-1"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <label className="block text-[11px] font-bold text-white/30 uppercase tracking-[0.2em] ml-1">Confirm Password</label>
                   <div className="relative group">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-white/20 group-focus-within:text-blue-500 transition-colors" />
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-white/20 group-focus-within:text-[#f7c32e] transition-colors" />
                     <input
-                      type="password"
+                      type={showConfirmPassword ? "text" : "password"}
                       placeholder="Confirm new password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       required
-                      className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-[15px] outline-none focus:border-blue-600/50 focus:bg-white/[0.05] transition-all placeholder:text-white/10"
+                      className="w-full bg-black/60 border border-white/10 rounded-xl py-4 pl-12 pr-12 text-[15px] text-white outline-none transition-all placeholder:text-white/30 autofill:shadow-[0_0_0_1000px_#050505_inset_!important] [text-fill-color:white_!important] [-webkit-text-fill-color:white_!important] focus:border-[#f7c32e]/50 focus:bg-black/80"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-[#f7c32e] transition-all z-10 p-1"
+                    >
+                      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -165,10 +201,10 @@ const ForgotPassword = () => {
 
               <button
                 type="submit"
-                disabled={loading || !passwordRules.every(r => r.valid) || newPassword !== confirmPassword}
-                className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-[15px] tracking-wide transition-all active:scale-[0.98] disabled:opacity-40 shadow-xl shadow-blue-600/20 flex items-center justify-center gap-2"
+                disabled={loading || !passwordRules.every(r => r.valid) || newPassword !== confirmPassword || !token}
+                className="w-full py-4 rounded-xl bg-[#f7c32e] hover:bg-[#f7c32e]/90 text-black font-bold text-[15px] tracking-wide transition-all active:scale-[0.98] disabled:opacity-40 shadow-xl shadow-[#f7c32e]/10 flex items-center justify-center gap-2"
               >
-                {loading ? "Updating..." : "Update password"}
+                {loading ? "Updating..." : "Update Password"}
                 {!loading && <ArrowRight size={18} />}
               </button>
             </form>
