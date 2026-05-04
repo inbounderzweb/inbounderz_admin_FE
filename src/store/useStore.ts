@@ -15,7 +15,7 @@ interface User {
   };
 }
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'https://pbcgzzqh-3000.inc1.devtunnels.ms';
 
 interface AppState {
   sidebarCollapsed: boolean;
