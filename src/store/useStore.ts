@@ -15,6 +15,8 @@ interface User {
   };
 }
 
+const BASE_URL = 'http://localhost:3000';
+
 interface AppState {
   sidebarCollapsed: boolean;
   setSidebarCollapsed: (collapsed: boolean) => void;
@@ -75,7 +77,7 @@ export const useAppStore = create<AppState>()(
 
       login: async (credentials) => {
         try {
-          const response = await fetch('http://localhost:3000/auth/login', {
+          const response = await fetch(`${BASE_URL}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(credentials),
@@ -99,7 +101,7 @@ export const useAppStore = create<AppState>()(
 
       logout: async () => {
         try {
-          await fetch('http://localhost:3000/auth/logout', { 
+          await fetch(`${BASE_URL}/auth/logout`, { 
             method: 'POST',
             credentials: 'include'
           });
@@ -114,7 +116,7 @@ export const useAppStore = create<AppState>()(
       checkAuth: async () => {
         set({ isAuthLoading: true });
         try {
-          const response = await fetch('http://localhost:3000/auth/me', {
+          const response = await fetch(`${BASE_URL}/auth/me`, {
             credentials: 'include'
           });
           
@@ -142,7 +144,7 @@ export const useAppStore = create<AppState>()(
 
       forgotPassword: async (email: string) => {
         try {
-          const response = await fetch('http://localhost:3000/auth/forgot-password', {
+          const response = await fetch(`${BASE_URL}/auth/forgot-password`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email }),
@@ -157,7 +159,7 @@ export const useAppStore = create<AppState>()(
 
       resetPassword: async (resetData: any) => {
         try {
-          const response = await fetch('http://localhost:3000/auth/reset-password', {
+          const response = await fetch(`${BASE_URL}/auth/reset-password`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(resetData),
@@ -198,7 +200,7 @@ export const useDataStore = create((set) => ({
   fetchNotifications: async () => {
     set({ isNotificationsLoading: true });
     try {
-      const response = await fetch('http://localhost:3000/notifications', { credentials: 'include' });
+      const response = await fetch(`${BASE_URL}/notifications`, { credentials: 'include' });
       const data = await response.json();
       if (data.success) {
         set({ 
@@ -215,7 +217,7 @@ export const useDataStore = create((set) => ({
 
   markNotificationAsRead: async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:3000/notifications/${id}/read`, { 
+      const response = await fetch(`${BASE_URL}/notifications/${id}/read`, { 
         method: 'PATCH',
         credentials: 'include'
       });
@@ -235,7 +237,7 @@ export const useDataStore = create((set) => ({
 
   markAllNotificationsAsRead: async () => {
     try {
-      const response = await fetch('http://localhost:3000/notifications/read-all', { 
+      const response = await fetch(`${BASE_URL}/notifications/read-all`, { 
         method: 'PATCH',
         credentials: 'include'
       });
@@ -253,7 +255,7 @@ export const useDataStore = create((set) => ({
 
   clearAllNotifications: async () => {
     try {
-      const response = await fetch('http://localhost:3000/notifications/clear-all', { 
+      const response = await fetch(`${BASE_URL}/notifications/clear-all`, { 
         method: 'DELETE',
         credentials: 'include'
       });
@@ -271,7 +273,7 @@ export const useDataStore = create((set) => ({
 
   markNotificationByReferenceAsRead: async (refId: string) => {
     try {
-      const response = await fetch(`http://localhost:3000/notifications/read-ref/${refId}`, { 
+      const response = await fetch(`${BASE_URL}/notifications/read-ref/${refId}`, { 
         method: 'PATCH',
         credentials: 'include'
       });
@@ -297,7 +299,7 @@ export const useDataStore = create((set) => ({
   fetchDashboardStats: async () => {
     set({ isDashboardLoading: true });
     try {
-      const response = await fetch('http://localhost:3000/dashboard/stats', { credentials: 'include' });
+      const response = await fetch(`${BASE_URL}/dashboard/stats`, { credentials: 'include' });
       const data = await response.json();
       if (data.success) {
         set({ dashboardStats: data.data });
@@ -315,7 +317,7 @@ export const useDataStore = create((set) => ({
   fetchAnalyticsStats: async () => {
     set({ isAnalyticsLoading: true });
     try {
-      const response = await fetch('http://localhost:3000/dashboard/analytics', { credentials: 'include' });
+      const response = await fetch(`${BASE_URL}/dashboard/analytics`, { credentials: 'include' });
       const data = await response.json();
       if (data.success) {
         set({ analyticsStats: data.data });
@@ -330,8 +332,8 @@ export const useDataStore = create((set) => ({
   fetchUnreadCounts: async () => {
     try {
       const [enqRes, carRes] = await Promise.all([
-        fetch('http://localhost:3000/enquiries/unread-count', { credentials: 'include' }),
-        fetch('http://localhost:3000/careers/unread-count', { credentials: 'include' })
+        fetch(`${BASE_URL}/enquiries/unread-count`, { credentials: 'include' }),
+        fetch(`${BASE_URL}/careers/unread-count`, { credentials: 'include' })
       ]);
       const [enqData, carData] = await Promise.all([enqRes.json(), carRes.json()]);
       
@@ -355,7 +357,7 @@ export const useDataStore = create((set) => ({
   fetchEnquiries: async (page = 1, search = '', status = '', limit = 10, dateRange = '', startDate = '', endDate = '') => {
     set({ isDataLoading: true });
     try {
-      const response = await fetch(`http://localhost:3000/enquiries?page=${page}&limit=${limit}&search=${search}&status=${status}&dateRange=${dateRange}&startDate=${startDate}&endDate=${endDate}`, {
+      const response = await fetch(`${BASE_URL}/enquiries?page=${page}&limit=${limit}&search=${search}&status=${status}&dateRange=${dateRange}&startDate=${startDate}&endDate=${endDate}`, {
         credentials: 'include'
       });
       const data = await response.json();
@@ -374,7 +376,7 @@ export const useDataStore = create((set) => ({
 
   exportEnquiries: async (search = '', status = '', dateRange = '', startDate = '', endDate = '') => {
     try {
-      const response = await fetch(`http://localhost:3000/enquiries?isExport=true&search=${search}&status=${status}&dateRange=${dateRange}&startDate=${startDate}&endDate=${endDate}`, {
+      const response = await fetch(`${BASE_URL}/enquiries?isExport=true&search=${search}&status=${status}&dateRange=${dateRange}&startDate=${startDate}&endDate=${endDate}`, {
         credentials: 'include'
       });
       const data = await response.json();
@@ -426,7 +428,7 @@ export const useDataStore = create((set) => ({
 
   bulkUpdateEnquiryStatus: async (ids: string[], status: string) => {
     try {
-      const response = await fetch('http://localhost:3000/enquiries/bulk-status', {
+      const response = await fetch(`${BASE_URL}/enquiries/bulk-status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids, status }),
@@ -453,7 +455,7 @@ export const useDataStore = create((set) => ({
 
   bulkDeleteEnquiries: async (ids: string[]) => {
     try {
-      const response = await fetch('http://localhost:3000/enquiries/bulk', {
+      const response = await fetch(`${BASE_URL}/enquiries/bulk`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids }),
@@ -476,7 +478,7 @@ export const useDataStore = create((set) => ({
   fetchCareers: async (page = 1, search = '', status = '', limit = 10, dateRange = '', startDate = '', endDate = '') => {
     set({ isCareersLoading: true });
     try {
-      const response = await fetch(`http://localhost:3000/careers?page=${page}&limit=${limit}&search=${search}&status=${status}&dateRange=${dateRange}&startDate=${startDate}&endDate=${endDate}`, {
+      const response = await fetch(`${BASE_URL}/careers?page=${page}&limit=${limit}&search=${search}&status=${status}&dateRange=${dateRange}&startDate=${startDate}&endDate=${endDate}`, {
         credentials: 'include'
       });
       const data = await response.json();
@@ -495,7 +497,7 @@ export const useDataStore = create((set) => ({
 
   exportCareers: async (search = '', status = '', dateRange = '', startDate = '', endDate = '') => {
     try {
-      const response = await fetch(`http://localhost:3000/careers?isExport=true&search=${search}&status=${status}&dateRange=${dateRange}&startDate=${startDate}&endDate=${endDate}`, {
+      const response = await fetch(`${BASE_URL}/careers?isExport=true&search=${search}&status=${status}&dateRange=${dateRange}&startDate=${startDate}&endDate=${endDate}`, {
         credentials: 'include'
       });
       const data = await response.json();
@@ -535,7 +537,7 @@ export const useDataStore = create((set) => ({
 
   bulkUpdateCareerStatus: async (ids: string[], status: string) => {
     try {
-      const response = await fetch('http://localhost:3000/careers/bulk-status', {
+      const response = await fetch(`${BASE_URL}/careers/bulk-status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids, status }),
@@ -562,7 +564,7 @@ export const useDataStore = create((set) => ({
 
   bulkDeleteCareers: async (ids: string[]) => {
     try {
-      const response = await fetch('http://localhost:3000/careers/bulk-delete', {
+      const response = await fetch(`${BASE_URL}/careers/bulk-delete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids }),
@@ -584,7 +586,7 @@ export const useDataStore = create((set) => ({
   },
   fetchUsers: async () => {
     try {
-      const response = await fetch('http://localhost:3000/users', {
+      const response = await fetch(`${BASE_URL}/users`  , {
         credentials: 'include'
       });
       const data = await response.json();
@@ -598,7 +600,7 @@ export const useDataStore = create((set) => ({
 
   addUser: async (userData: any) => {
     try {
-      const response = await fetch('http://localhost:3000/users', {
+      const response = await fetch(`${BASE_URL}/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
@@ -619,7 +621,7 @@ export const useDataStore = create((set) => ({
 
   updateUser: async (userId: string, userData: any) => {
     try {
-      const response = await fetch(`http://localhost:3000/users/${userId}`, {
+      const response = await fetch(`${BASE_URL}/users/${userId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
@@ -641,7 +643,7 @@ export const useDataStore = create((set) => ({
 
   deleteUser: async (userId: string) => {
     try {
-      const response = await fetch(`http://localhost:3000/users/${userId}`, {
+      const response = await fetch(`${BASE_URL}/users/${userId}`, {
         method: 'DELETE',
         credentials: 'include'
       });
