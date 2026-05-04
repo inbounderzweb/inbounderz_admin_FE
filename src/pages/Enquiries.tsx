@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, Check, Trash2, Download, Eye, Loader2, X, Filter, Mail, Phone, Building } from 'lucide-react';
 import { useAppStore, useDataStore } from '../store/useStore';
 import { clsx } from 'clsx';
@@ -24,19 +24,24 @@ const Enquiries = () => {
   const [limit, setLimit] = useState(10);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [viewEnquiry, setViewEnquiry] = useState<any | null>(null);
+  const hasFetchedRef = useRef(false);
 
-  // Initial fetch
   useEffect(() => {
-    fetchEnquiries(1, '', '', 10, '', '', '');
-  }, []);
-
-  // Debounced search
-  useEffect(() => {
-    const timer = setTimeout(() => {
+    const fetchCurrentPage = () => {
       fetchEnquiries(1, searchTerm, statusFilter, limit, dateFilter, customStartDate, customEndDate);
-    }, 500);
+    };
+
+    if (!hasFetchedRef.current) {
+      hasFetchedRef.current = true;
+      fetchCurrentPage();
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      fetchCurrentPage();
+    }, 300);
     return () => clearTimeout(timer);
-  }, [searchTerm, statusFilter, limit, dateFilter, customStartDate, customEndDate]);
+  }, [fetchEnquiries, searchTerm, statusFilter, limit, dateFilter, customStartDate, customEndDate]);
 
   const handlePageChange = (page: number) => {
     fetchEnquiries(page, searchTerm, statusFilter, limit, dateFilter, customStartDate, customEndDate);

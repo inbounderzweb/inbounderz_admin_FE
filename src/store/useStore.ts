@@ -1,14 +1,24 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-interface User {
-  name: string;
-  email: string;
-  role: string;
-  permissions?: Permissions;
-}
-
 const BASE_URL = 'https://pbcgzzqh-3000.inc1.devtunnels.ms';
+const REQUEST_CACHE_MS = 30000;
+const inFlightRequests = new Map<string, Promise<void>>();
+
+const buildQueryKey = (
+  resource: string,
+  page = 1,
+  search = '',
+  status = '',
+  limit = 10,
+  dateRange = '',
+  startDate = '',
+  endDate = ''
+) => [resource, page, search, status, limit, dateRange, startDate, endDate].join('|');
+
+const isFreshCache = (lastKey: string | undefined, lastFetchedAt: number | undefined, key: string) => (
+  lastKey === key && typeof lastFetchedAt === 'number' && lastFetchedAt > 0 && Date.now() - lastFetchedAt < REQUEST_CACHE_MS
+);
 
 interface Permissions {
   dashboard: { view: boolean };
@@ -17,6 +27,13 @@ interface Permissions {
   analytics: { view: boolean; export: boolean };
   settings: { view: boolean; edit: boolean };
   users: { view: boolean; create: boolean; edit: boolean; delete: boolean };
+}
+
+interface User {
+  name: string;
+  email: string;
+  role: string;
+  permissions?: Permissions;
 }
 
 interface Notification {
@@ -152,35 +169,42 @@ interface DataState {
   enquiries: Enquiry[];
   pagination: Pagination;
   isDataLoading: boolean;
+  lastEnquiriesQuery: string;
+  lastEnquiriesFetchedAt: number;
   unreadEnquiriesCount: number;
   careers: Career[];
   careersPagination: Pagination;
   isCareersLoading: boolean;
+  lastCareersQuery: string;
+  lastCareersFetchedAt: number;
   unreadCareersCount: number;
   serverNotifications: ServerNotification[];
   unreadNotificationsCount: number;
   isNotificationsLoading: boolean;
-  fetchNotifications: () => Promise<void>;
+  notificationsFetchedAt: number;
+  fetchNotifications: () => Promise<void> | undefined;
   markNotificationAsRead: (id: string) => Promise<void>;
   markAllNotificationsAsRead: () => Promise<void>;
   clearAllNotifications: () => Promise<void>;
   markNotificationByReferenceAsRead: (refId: string) => Promise<void>;
   dashboardStats: DashboardStats | null;
   isDashboardLoading: boolean;
-  fetchDashboardStats: () => Promise<void>;
+  dashboardStatsFetchedAt: number;
+  fetchDashboardStats: () => Promise<void> | undefined;
   analyticsStats: AnalyticsStats | null;
   isAnalyticsLoading: boolean;
-  fetchAnalyticsStats: () => Promise<void>;
-  fetchUnreadCounts: () => Promise<void>;
+  analyticsStatsFetchedAt: number;
+  fetchAnalyticsStats: () => Promise<void> | undefined;
+  fetchUnreadCounts: () => Promise<void> | undefined;
   clients: Client[];
   users: UserRecord[];
-  fetchEnquiries: (page?: number, search?: string, status?: string, limit?: number, dateRange?: string, startDate?: string, endDate?: string) => Promise<void>;
+  fetchEnquiries: (page?: number, search?: string, status?: string, limit?: number, dateRange?: string, startDate?: string, endDate?: string) => Promise<void> | undefined;
   exportEnquiries: (search?: string, status?: string, dateRange?: string, startDate?: string, endDate?: string) => Promise<void>;
   deleteEnquiry: (id: string) => void;
   markEnquiryRead: (id: string) => void;
   bulkUpdateEnquiryStatus: (ids: string[], status: string) => Promise<ApiResult>;
   bulkDeleteEnquiries: (ids: string[]) => Promise<ApiResult>;
-  fetchCareers: (page?: number, search?: string, status?: string, limit?: number, dateRange?: string, startDate?: string, endDate?: string) => Promise<void>;
+  fetchCareers: (page?: number, search?: string, status?: string, limit?: number, dateRange?: string, startDate?: string, endDate?: string) => Promise<void> | undefined;
   exportCareers: (search?: string, status?: string, dateRange?: string, startDate?: string, endDate?: string) => Promise<void>;
   bulkUpdateCareerStatus: (ids: string[], status: string) => Promise<ApiResult>;
   bulkDeleteCareers: (ids: string[]) => Promise<ApiResult>;
@@ -329,37 +353,54 @@ export const useAppStore = create<AppState>()(
   )
 );
 
-export const useDataStore = create<DataState>((set) => ({
+export const useDataStore = create<DataState>((set, get) => ({
   enquiries: [],
   pagination: { total: 0, page: 1, limit: 10, pages: 1 },
   isDataLoading: false,
+  lastEnquiriesQuery: '',
+  lastEnquiriesFetchedAt: 0,
   unreadEnquiriesCount: 0,
   
   careers: [],
   careersPagination: { total: 0, page: 1, limit: 10, pages: 1 },
   isCareersLoading: false,
+  lastCareersQuery: '',
+  lastCareersFetchedAt: 0,
   unreadCareersCount: 0,
   
   serverNotifications: [],
   unreadNotificationsCount: 0,
   isNotificationsLoading: false,
+  notificationsFetchedAt: 0,
 
   fetchNotifications: async () => {
-    set({ isNotificationsLoading: true });
-    try {
-      const response = await fetch(`${BASE_URL}/notifications`, { credentials: 'include' });
-      const data: ApiResponse<ServerNotification[]> = await response.json();
-      if (data.success) {
-        set({ 
-          serverNotifications: data.data ?? [],
-          unreadNotificationsCount: data.unreadCount ?? 0
-        });
+    const key = 'notifications';
+    const state = get();
+    if (Date.now() - state.notificationsFetchedAt < REQUEST_CACHE_MS) return;
+    if (inFlightRequests.has(key)) return inFlightRequests.get(key);
+
+    const request = (async () => {
+      set({ isNotificationsLoading: state.serverNotifications.length === 0 });
+      try {
+        const response = await fetch(`${BASE_URL}/notifications`, { credentials: 'include' });
+        const data: ApiResponse<ServerNotification[]> = await response.json();
+        if (data.success) {
+          set({ 
+            serverNotifications: data.data ?? [],
+            unreadNotificationsCount: data.unreadCount ?? 0,
+            notificationsFetchedAt: Date.now()
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch notifications:', error);
+      } finally {
+        set({ isNotificationsLoading: false });
+        inFlightRequests.delete(key);
       }
-    } catch (error) {
-      console.error('Failed to fetch notifications:', error);
-    } finally {
-      set({ isNotificationsLoading: false });
-    }
+    })();
+
+    inFlightRequests.set(key, request);
+    return request;
   },
 
   markNotificationAsRead: async (id: string) => {
@@ -442,57 +483,91 @@ export const useDataStore = create<DataState>((set) => ({
 
   dashboardStats: null,
   isDashboardLoading: false,
+  dashboardStatsFetchedAt: 0,
 
   fetchDashboardStats: async () => {
-    set({ isDashboardLoading: true });
-    try {
-      const response = await fetch(`${BASE_URL}/dashboard/stats`, { credentials: 'include' });
-      const data: ApiResponse<DashboardStats> = await response.json();
-      if (data.success) {
-        set({ dashboardStats: data.data ?? null });
+    const key = 'dashboard:stats';
+    const state = get();
+    if (state.dashboardStats && Date.now() - state.dashboardStatsFetchedAt < REQUEST_CACHE_MS) return;
+    if (inFlightRequests.has(key)) return inFlightRequests.get(key);
+
+    const request = (async () => {
+      set({ isDashboardLoading: !state.dashboardStats });
+      try {
+        const response = await fetch(`${BASE_URL}/dashboard/stats`, { credentials: 'include' });
+        const data: ApiResponse<DashboardStats> = await response.json();
+        if (data.success) {
+          set({ dashboardStats: data.data ?? null, dashboardStatsFetchedAt: Date.now() });
+        }
+      } catch (error) {
+        console.error('Failed to fetch dashboard stats:', error);
+      } finally {
+        set({ isDashboardLoading: false });
+        inFlightRequests.delete(key);
       }
-    } catch (error) {
-      console.error('Failed to fetch dashboard stats:', error);
-    } finally {
-      set({ isDashboardLoading: false });
-    }
+    })();
+
+    inFlightRequests.set(key, request);
+    return request;
   },
 
   analyticsStats: null,
   isAnalyticsLoading: false,
+  analyticsStatsFetchedAt: 0,
 
   fetchAnalyticsStats: async () => {
-    set({ isAnalyticsLoading: true });
-    try {
-      const response = await fetch(`${BASE_URL}/dashboard/analytics`, { credentials: 'include' });
-      const data: ApiResponse<AnalyticsStats> = await response.json();
-      if (data.success) {
-        set({ analyticsStats: data.data ?? null });
+    const key = 'dashboard:analytics';
+    const state = get();
+    if (state.analyticsStats && Date.now() - state.analyticsStatsFetchedAt < REQUEST_CACHE_MS) return;
+    if (inFlightRequests.has(key)) return inFlightRequests.get(key);
+
+    const request = (async () => {
+      set({ isAnalyticsLoading: !state.analyticsStats });
+      try {
+        const response = await fetch(`${BASE_URL}/dashboard/analytics`, { credentials: 'include' });
+        const data: ApiResponse<AnalyticsStats> = await response.json();
+        if (data.success) {
+          set({ analyticsStats: data.data ?? null, analyticsStatsFetchedAt: Date.now() });
+        }
+      } catch (error) {
+        console.error('Failed to fetch analytics stats:', error);
+      } finally {
+        set({ isAnalyticsLoading: false });
+        inFlightRequests.delete(key);
       }
-    } catch (error) {
-      console.error('Failed to fetch analytics stats:', error);
-    } finally {
-      set({ isAnalyticsLoading: false });
-    }
+    })();
+
+    inFlightRequests.set(key, request);
+    return request;
   },
 
   fetchUnreadCounts: async () => {
-    try {
-      const [enqRes, carRes] = await Promise.all([
-        fetch(`${BASE_URL}/enquiries/unread-count`, { credentials: 'include' }),
-        fetch(`${BASE_URL}/careers/unread-count`, { credentials: 'include' })
-      ]);
-      const [enqData, carData]: [ApiResponse<never>, ApiResponse<never>] = await Promise.all([enqRes.json(), carRes.json()]);
-      
-      if (enqData.success) {
-        set({ unreadEnquiriesCount: enqData.count ?? 0 });
+    const key = 'unread-counts';
+    if (inFlightRequests.has(key)) return inFlightRequests.get(key);
+
+    const request = (async () => {
+      try {
+        const [enqRes, carRes] = await Promise.all([
+          fetch(`${BASE_URL}/enquiries/unread-count`, { credentials: 'include' }),
+          fetch(`${BASE_URL}/careers/unread-count`, { credentials: 'include' })
+        ]);
+        const [enqData, carData]: [ApiResponse<never>, ApiResponse<never>] = await Promise.all([enqRes.json(), carRes.json()]);
+        
+        if (enqData.success) {
+          set({ unreadEnquiriesCount: enqData.count ?? 0 });
+        }
+        if (carData.success) {
+          set({ unreadCareersCount: carData.count ?? 0 });
+        }
+      } catch (error) {
+        console.error('Failed to fetch unread counts:', error);
+      } finally {
+        inFlightRequests.delete(key);
       }
-      if (carData.success) {
-        set({ unreadCareersCount: carData.count ?? 0 });
-      }
-    } catch (error) {
-      console.error('Failed to fetch unread counts:', error);
-    }
+    })();
+
+    inFlightRequests.set(key, request);
+    return request;
   },
 
   clients: [
@@ -502,23 +577,36 @@ export const useDataStore = create<DataState>((set) => ({
   users: [],
   
   fetchEnquiries: async (page = 1, search = '', status = '', limit = 10, dateRange = '', startDate = '', endDate = '') => {
-    set({ isDataLoading: true });
-    try {
-      const response = await fetch(`${BASE_URL}/enquiries?page=${page}&limit=${limit}&search=${search}&status=${status}&dateRange=${dateRange}&startDate=${startDate}&endDate=${endDate}`, {
-        credentials: 'include'
-      });
-      const data: ApiResponse<Enquiry[]> = await response.json();
-      if (data.success) {
-        set({ 
-          enquiries: data.data ?? [],
-          pagination: data.pagination ?? { total: 0, page, limit, pages: 1 }
+    const key = buildQueryKey('enquiries', page, search, status, limit, dateRange, startDate, endDate);
+    const state = get();
+    if (isFreshCache(state.lastEnquiriesQuery, state.lastEnquiriesFetchedAt, key)) return;
+    if (inFlightRequests.has(key)) return inFlightRequests.get(key);
+
+    const request = (async () => {
+      set({ isDataLoading: state.enquiries.length === 0 });
+      try {
+        const response = await fetch(`${BASE_URL}/enquiries?page=${page}&limit=${limit}&search=${search}&status=${status}&dateRange=${dateRange}&startDate=${startDate}&endDate=${endDate}`, {
+          credentials: 'include'
         });
+        const data: ApiResponse<Enquiry[]> = await response.json();
+        if (data.success) {
+          set({ 
+            enquiries: data.data ?? [],
+            pagination: data.pagination ?? { total: 0, page, limit, pages: 1 },
+            lastEnquiriesQuery: key,
+            lastEnquiriesFetchedAt: Date.now()
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch enquiries:', error);
+      } finally {
+        set({ isDataLoading: false });
+        inFlightRequests.delete(key);
       }
-    } catch (error) {
-      console.error('Failed to fetch enquiries:', error);
-    } finally {
-      set({ isDataLoading: false });
-    }
+    })();
+
+    inFlightRequests.set(key, request);
+    return request;
   },
 
   exportEnquiries: async (search = '', status = '', dateRange = '', startDate = '', endDate = '') => {
@@ -623,23 +711,36 @@ export const useDataStore = create<DataState>((set) => ({
     }
   },
   fetchCareers: async (page = 1, search = '', status = '', limit = 10, dateRange = '', startDate = '', endDate = '') => {
-    set({ isCareersLoading: true });
-    try {
-      const response = await fetch(`${BASE_URL}/careers?page=${page}&limit=${limit}&search=${search}&status=${status}&dateRange=${dateRange}&startDate=${startDate}&endDate=${endDate}`, {
-        credentials: 'include'
-      });
-      const data: ApiResponse<Career[]> = await response.json();
-      if (data.success) {
-        set({ 
-          careers: data.data ?? [],
-          careersPagination: data.pagination ?? { total: 0, page, limit, pages: 1 }
+    const key = buildQueryKey('careers', page, search, status, limit, dateRange, startDate, endDate);
+    const state = get();
+    if (isFreshCache(state.lastCareersQuery, state.lastCareersFetchedAt, key)) return;
+    if (inFlightRequests.has(key)) return inFlightRequests.get(key);
+
+    const request = (async () => {
+      set({ isCareersLoading: state.careers.length === 0 });
+      try {
+        const response = await fetch(`${BASE_URL}/careers?page=${page}&limit=${limit}&search=${search}&status=${status}&dateRange=${dateRange}&startDate=${startDate}&endDate=${endDate}`, {
+          credentials: 'include'
         });
+        const data: ApiResponse<Career[]> = await response.json();
+        if (data.success) {
+          set({ 
+            careers: data.data ?? [],
+            careersPagination: data.pagination ?? { total: 0, page, limit, pages: 1 },
+            lastCareersQuery: key,
+            lastCareersFetchedAt: Date.now()
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch careers:', error);
+      } finally {
+        set({ isCareersLoading: false });
+        inFlightRequests.delete(key);
       }
-    } catch (error) {
-      console.error('Failed to fetch careers:', error);
-    } finally {
-      set({ isCareersLoading: false });
-    }
+    })();
+
+    inFlightRequests.set(key, request);
+    return request;
   },
 
   exportCareers: async (search = '', status = '', dateRange = '', startDate = '', endDate = '') => {

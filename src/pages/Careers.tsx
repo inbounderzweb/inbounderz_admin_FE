@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, Filter, Download, Mail, Phone, Eye, Check, X, Trash2, Loader2, FileText } from 'lucide-react';
 import { useAppStore, useDataStore } from '../store/useStore';
 import clsx from 'clsx';
@@ -24,19 +24,24 @@ const Careers = () => {
   const [limit, setLimit] = useState(10);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [viewCareer, setViewCareer] = useState<any | null>(null);
+  const hasFetchedRef = useRef(false);
 
-  // Initial fetch
   useEffect(() => {
-    fetchCareers(1, '', '', 10, '', '', '');
-  }, []);
-
-  // Debounced search
-  useEffect(() => {
-    const timer = setTimeout(() => {
+    const fetchCurrentPage = () => {
       fetchCareers(1, searchTerm, statusFilter, limit, dateFilter, customStartDate, customEndDate);
-    }, 500);
+    };
+
+    if (!hasFetchedRef.current) {
+      hasFetchedRef.current = true;
+      fetchCurrentPage();
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      fetchCurrentPage();
+    }, 300);
     return () => clearTimeout(timer);
-  }, [searchTerm, statusFilter, limit, dateFilter, customStartDate, customEndDate]);
+  }, [fetchCareers, searchTerm, statusFilter, limit, dateFilter, customStartDate, customEndDate]);
 
   const handlePageChange = (page: number) => {
     fetchCareers(page, searchTerm, statusFilter, limit, dateFilter, customStartDate, customEndDate);
