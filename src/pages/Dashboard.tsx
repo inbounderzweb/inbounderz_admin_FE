@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { MessageSquare, Mail, FileText, Users, ArrowUp, ArrowDown, Loader2, Bell, BarChart3, Clock, Zap, AlertTriangle, TrendingUp, Target, Globe, MousePointer2 } from 'lucide-react';
+import { useEffect } from 'react';
+import { MessageSquare, Mail, FileText, Users, ArrowUp, ArrowDown, Loader2, Bell, BarChart3, Clock, Zap, AlertTriangle, TrendingUp, Target } from 'lucide-react';
 import { useDataStore } from '../store/useStore';
 import { clsx } from 'clsx';
 

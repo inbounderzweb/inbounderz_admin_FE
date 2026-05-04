@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { BarChart3, PieChart, Layers, Globe, Smartphone, Monitor, Loader2, ArrowUpRight } from 'lucide-react';
+import { useEffect } from 'react';
+import { PieChart, Layers, Globe, Smartphone, Monitor, Loader2, ArrowUpRight } from 'lucide-react';
 import { useDataStore } from '../store/useStore';
 import { clsx } from 'clsx';
 

@@ -5,17 +5,122 @@ interface User {
   name: string;
   email: string;
   role: string;
-  permissions?: {
-    dashboard: { view: boolean };
-    enquiries: { view: boolean; edit: boolean; delete: boolean; export: boolean };
-    careers: { view: boolean; edit: boolean; delete: boolean; export: boolean };
-    analytics: { view: boolean; export: boolean };
-    settings: { view: boolean; edit: boolean };
-    users: { view: boolean; create: boolean; edit: boolean; delete: boolean };
-  };
+  permissions?: Permissions;
 }
 
 const BASE_URL = 'https://pbcgzzqh-3000.inc1.devtunnels.ms';
+
+interface Permissions {
+  dashboard: { view: boolean };
+  enquiries: { view: boolean; edit: boolean; delete: boolean; export: boolean };
+  careers: { view: boolean; edit: boolean; delete: boolean; export: boolean };
+  analytics: { view: boolean; export: boolean };
+  settings: { view: boolean; edit: boolean };
+  users: { view: boolean; create: boolean; edit: boolean; delete: boolean };
+}
+
+interface Notification {
+  id: number;
+  message: string;
+  type: 'success' | 'error';
+}
+
+interface NavigationItem {
+  id?: string;
+  label?: string;
+  path?: string;
+  icon?: string;
+  children?: NavigationItem[];
+}
+
+interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+interface ResetPasswordData {
+  token: string;
+  newPassword: string;
+}
+
+interface ApiResult {
+  success: boolean;
+  message?: string;
+}
+
+interface AuthResponse extends ApiResult {
+  user?: User;
+  data?: User;
+  navigation?: NavigationItem[];
+  devToken?: string;
+}
+
+interface ApiResponse<T> extends ApiResult {
+  data?: T;
+  pagination?: Pagination;
+  unreadCount?: number;
+  count?: number;
+}
+
+interface Pagination {
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+}
+
+type EntryStatus = 'new' | 'reviewed' | 'selected' | 'unselected' | string;
+
+interface Enquiry {
+  _id: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  designation?: string;
+  industry?: string;
+  message?: string;
+  status?: EntryStatus;
+  createdAt: string;
+}
+
+interface Career {
+  _id: string;
+  email?: string;
+  phone?: string;
+  ccode?: string;
+  resumeUrl?: string;
+  status?: EntryStatus;
+  createdAt: string;
+}
+
+interface ServerNotification {
+  _id: string;
+  title?: string;
+  description?: string;
+  type?: string;
+  link?: string;
+  referenceId?: string;
+  isRead?: boolean;
+  createdAt: string;
+}
+
+interface Client {
+  id: number;
+  name: string;
+  company: string;
+  contact: string;
+  req: string;
+  status: string;
+}
+
+interface UserRecord extends User {
+  _id: string;
+  createdAt?: string;
+}
+
+type DashboardStats = Record<string, unknown>;
+type AnalyticsStats = Record<string, unknown>;
 
 interface AppState {
   sidebarCollapsed: boolean;
@@ -25,7 +130,7 @@ interface AppState {
   activePage: string;
   setActivePage: (page: string) => void;
   
-  notifications: any[];
+  notifications: Notification[];
   addNotification: (message: string, type: 'success' | 'error') => void;
   
   darkMode: boolean;
@@ -35,12 +140,54 @@ interface AppState {
   user: User | null;
   isAuthenticated: boolean;
   isAuthLoading: boolean;
-  navigation: any[];
-  login: (credentials: any) => Promise<{ success: boolean; message?: string }>;
+  navigation: NavigationItem[];
+  login: (credentials: LoginCredentials) => Promise<ApiResult>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
-  forgotPassword: (email: string) => Promise<{ success: boolean; message?: string }>;
-  resetPassword: (data: any) => Promise<{ success: boolean; message?: string }>;
+  forgotPassword: (email: string) => Promise<AuthResponse>;
+  resetPassword: (data: ResetPasswordData) => Promise<ApiResult>;
+}
+
+interface DataState {
+  enquiries: Enquiry[];
+  pagination: Pagination;
+  isDataLoading: boolean;
+  unreadEnquiriesCount: number;
+  careers: Career[];
+  careersPagination: Pagination;
+  isCareersLoading: boolean;
+  unreadCareersCount: number;
+  serverNotifications: ServerNotification[];
+  unreadNotificationsCount: number;
+  isNotificationsLoading: boolean;
+  fetchNotifications: () => Promise<void>;
+  markNotificationAsRead: (id: string) => Promise<void>;
+  markAllNotificationsAsRead: () => Promise<void>;
+  clearAllNotifications: () => Promise<void>;
+  markNotificationByReferenceAsRead: (refId: string) => Promise<void>;
+  dashboardStats: DashboardStats | null;
+  isDashboardLoading: boolean;
+  fetchDashboardStats: () => Promise<void>;
+  analyticsStats: AnalyticsStats | null;
+  isAnalyticsLoading: boolean;
+  fetchAnalyticsStats: () => Promise<void>;
+  fetchUnreadCounts: () => Promise<void>;
+  clients: Client[];
+  users: UserRecord[];
+  fetchEnquiries: (page?: number, search?: string, status?: string, limit?: number, dateRange?: string, startDate?: string, endDate?: string) => Promise<void>;
+  exportEnquiries: (search?: string, status?: string, dateRange?: string, startDate?: string, endDate?: string) => Promise<void>;
+  deleteEnquiry: (id: string) => void;
+  markEnquiryRead: (id: string) => void;
+  bulkUpdateEnquiryStatus: (ids: string[], status: string) => Promise<ApiResult>;
+  bulkDeleteEnquiries: (ids: string[]) => Promise<ApiResult>;
+  fetchCareers: (page?: number, search?: string, status?: string, limit?: number, dateRange?: string, startDate?: string, endDate?: string) => Promise<void>;
+  exportCareers: (search?: string, status?: string, dateRange?: string, startDate?: string, endDate?: string) => Promise<void>;
+  bulkUpdateCareerStatus: (ids: string[], status: string) => Promise<ApiResult>;
+  bulkDeleteCareers: (ids: string[]) => Promise<ApiResult>;
+  fetchUsers: () => Promise<void>;
+  addUser: (userData: Omit<UserRecord, '_id' | 'createdAt'> & { password?: string }) => Promise<ApiResult>;
+  updateUser: (userId: string, userData: Partial<Omit<UserRecord, '_id' | 'createdAt'>> & { password?: string }) => Promise<ApiResult>;
+  deleteUser: (userId: string) => Promise<ApiResult>;
 }
 
 export const useAppStore = create<AppState>()(
@@ -83,7 +230,7 @@ export const useAppStore = create<AppState>()(
             body: JSON.stringify(credentials),
             credentials: 'include'
           });
-          const data = await response.json();
+          const data: AuthResponse = await response.json();
           if (data.success) {
             set({ 
               user: data.user || data.data, 
@@ -94,7 +241,7 @@ export const useAppStore = create<AppState>()(
             return { success: true };
           }
           return { success: false, message: data.message };
-        } catch (error) {
+        } catch {
           return { success: false, message: 'Server error' };
         }
       },
@@ -125,7 +272,7 @@ export const useAppStore = create<AppState>()(
              return;
           }
 
-          const data = await response.json();
+          const data: AuthResponse = await response.json();
           if (data.success) {
             set({ 
               user: data.user || data.data, 
@@ -135,7 +282,7 @@ export const useAppStore = create<AppState>()(
           } else {
             set({ user: null, isAuthenticated: false, navigation: [], activePage: 'login' });
           }
-        } catch (error) {
+        } catch {
           set({ user: null, isAuthenticated: false, navigation: [], activePage: 'login' });
         } finally {
           set({ isAuthLoading: false });
@@ -150,14 +297,14 @@ export const useAppStore = create<AppState>()(
             body: JSON.stringify({ email }),
             credentials: 'include'
           });
-          const data = await response.json();
+          const data: AuthResponse = await response.json();
           return data;
-        } catch (error) {
+        } catch {
           return { success: false, message: 'Server error' };
         }
       },
 
-      resetPassword: async (resetData: any) => {
+      resetPassword: async (resetData) => {
         try {
           const response = await fetch(`${BASE_URL}/auth/reset-password`, {
             method: 'POST',
@@ -165,9 +312,9 @@ export const useAppStore = create<AppState>()(
             body: JSON.stringify(resetData),
             credentials: 'include'
           });
-          const data = await response.json();
+          const data: ApiResult = await response.json();
           return data;
-        } catch (error) {
+        } catch {
           return { success: false, message: 'Server error' };
         }
       },
@@ -182,7 +329,7 @@ export const useAppStore = create<AppState>()(
   )
 );
 
-export const useDataStore = create((set) => ({
+export const useDataStore = create<DataState>((set) => ({
   enquiries: [],
   pagination: { total: 0, page: 1, limit: 10, pages: 1 },
   isDataLoading: false,
@@ -201,11 +348,11 @@ export const useDataStore = create((set) => ({
     set({ isNotificationsLoading: true });
     try {
       const response = await fetch(`${BASE_URL}/notifications`, { credentials: 'include' });
-      const data = await response.json();
+      const data: ApiResponse<ServerNotification[]> = await response.json();
       if (data.success) {
         set({ 
-          serverNotifications: data.data,
-          unreadNotificationsCount: data.unreadCount
+          serverNotifications: data.data ?? [],
+          unreadNotificationsCount: data.unreadCount ?? 0
         });
       }
     } catch (error) {
@@ -221,10 +368,10 @@ export const useDataStore = create((set) => ({
         method: 'PATCH',
         credentials: 'include'
       });
-      const data = await response.json();
+      const data: ApiResult = await response.json();
       if (data.success) {
-        set((state: any) => ({
-          serverNotifications: state.serverNotifications.map((n: any) => 
+        set((state) => ({
+          serverNotifications: state.serverNotifications.map((n) => 
             n._id === id ? { ...n, isRead: true } : n
           ),
           unreadNotificationsCount: Math.max(0, state.unreadNotificationsCount - 1)
@@ -241,10 +388,10 @@ export const useDataStore = create((set) => ({
         method: 'PATCH',
         credentials: 'include'
       });
-      const data = await response.json();
+      const data: ApiResult = await response.json();
       if (data.success) {
-        set((state: any) => ({
-          serverNotifications: state.serverNotifications.map((n: any) => ({ ...n, isRead: true })),
+        set((state) => ({
+          serverNotifications: state.serverNotifications.map((n) => ({ ...n, isRead: true })),
           unreadNotificationsCount: 0
         }));
       }
@@ -259,7 +406,7 @@ export const useDataStore = create((set) => ({
         method: 'DELETE',
         credentials: 'include'
       });
-      const data = await response.json();
+      const data: ApiResult = await response.json();
       if (data.success) {
         set({ 
           serverNotifications: [],
@@ -277,13 +424,13 @@ export const useDataStore = create((set) => ({
         method: 'PATCH',
         credentials: 'include'
       });
-      const data = await response.json();
+      const data: ApiResult = await response.json();
       if (data.success) {
-        set((state: any) => ({
-          serverNotifications: state.serverNotifications.map((n: any) => 
+        set((state) => ({
+          serverNotifications: state.serverNotifications.map((n) => 
             n.referenceId === refId ? { ...n, isRead: true } : n
           ),
-          unreadNotificationsCount: state.serverNotifications.filter((n: any) => 
+          unreadNotificationsCount: state.serverNotifications.filter((n) => 
             n.referenceId === refId && !n.isRead
           ).length > 0 ? Math.max(0, state.unreadNotificationsCount - 1) : state.unreadNotificationsCount
         }));
@@ -300,9 +447,9 @@ export const useDataStore = create((set) => ({
     set({ isDashboardLoading: true });
     try {
       const response = await fetch(`${BASE_URL}/dashboard/stats`, { credentials: 'include' });
-      const data = await response.json();
+      const data: ApiResponse<DashboardStats> = await response.json();
       if (data.success) {
-        set({ dashboardStats: data.data });
+        set({ dashboardStats: data.data ?? null });
       }
     } catch (error) {
       console.error('Failed to fetch dashboard stats:', error);
@@ -318,9 +465,9 @@ export const useDataStore = create((set) => ({
     set({ isAnalyticsLoading: true });
     try {
       const response = await fetch(`${BASE_URL}/dashboard/analytics`, { credentials: 'include' });
-      const data = await response.json();
+      const data: ApiResponse<AnalyticsStats> = await response.json();
       if (data.success) {
-        set({ analyticsStats: data.data });
+        set({ analyticsStats: data.data ?? null });
       }
     } catch (error) {
       console.error('Failed to fetch analytics stats:', error);
@@ -335,13 +482,13 @@ export const useDataStore = create((set) => ({
         fetch(`${BASE_URL}/enquiries/unread-count`, { credentials: 'include' }),
         fetch(`${BASE_URL}/careers/unread-count`, { credentials: 'include' })
       ]);
-      const [enqData, carData] = await Promise.all([enqRes.json(), carRes.json()]);
+      const [enqData, carData]: [ApiResponse<never>, ApiResponse<never>] = await Promise.all([enqRes.json(), carRes.json()]);
       
       if (enqData.success) {
-        set({ unreadEnquiriesCount: enqData.count });
+        set({ unreadEnquiriesCount: enqData.count ?? 0 });
       }
       if (carData.success) {
-        set({ unreadCareersCount: carData.count });
+        set({ unreadCareersCount: carData.count ?? 0 });
       }
     } catch (error) {
       console.error('Failed to fetch unread counts:', error);
@@ -360,11 +507,11 @@ export const useDataStore = create((set) => ({
       const response = await fetch(`${BASE_URL}/enquiries?page=${page}&limit=${limit}&search=${search}&status=${status}&dateRange=${dateRange}&startDate=${startDate}&endDate=${endDate}`, {
         credentials: 'include'
       });
-      const data = await response.json();
+      const data: ApiResponse<Enquiry[]> = await response.json();
       if (data.success) {
         set({ 
-          enquiries: data.data,
-          pagination: data.pagination
+          enquiries: data.data ?? [],
+          pagination: data.pagination ?? { total: 0, page, limit, pages: 1 }
         });
       }
     } catch (error) {
@@ -379,7 +526,7 @@ export const useDataStore = create((set) => ({
       const response = await fetch(`${BASE_URL}/enquiries?isExport=true&search=${search}&status=${status}&dateRange=${dateRange}&startDate=${startDate}&endDate=${endDate}`, {
         credentials: 'include'
       });
-      const data = await response.json();
+      const data: ApiResponse<Enquiry[]> = await response.json();
       if (data.success && data.data) {
         if (data.data.length === 0) {
           alert('No data found to export with the current filters.');
@@ -418,12 +565,12 @@ export const useDataStore = create((set) => ({
     }
   },
 
-  deleteEnquiry: (id: string) => set((state: any) => ({
-    enquiries: state.enquiries.filter((e: any) => e._id !== id)
+  deleteEnquiry: (id: string) => set((state) => ({
+    enquiries: state.enquiries.filter((e) => e._id !== id)
   })),
   
-  markEnquiryRead: (id: string) => set((state: any) => ({
-    enquiries: state.enquiries.map((e: any) => e._id === id ? { ...e, status: 'reviewed' } : e)
+  markEnquiryRead: (id: string) => set((state) => ({
+    enquiries: state.enquiries.map((e) => e._id === id ? { ...e, status: 'reviewed' } : e)
   })),
 
   bulkUpdateEnquiryStatus: async (ids: string[], status: string) => {
@@ -434,16 +581,16 @@ export const useDataStore = create((set) => ({
         body: JSON.stringify({ ids, status }),
         credentials: 'include'
       });
-      const data = await response.json();
+      const data: ApiResult = await response.json();
       if (data.success) {
-        set((state: any) => ({
-          enquiries: state.enquiries.map((e: any) => 
+        set((state) => ({
+          enquiries: state.enquiries.map((e) => 
             ids.includes(e._id) ? { ...e, status } : e
           )
         }));
         // Update unread count automatically
-        const { fetchUnreadCounts } = useDataStore.getState() as any;
-        if (fetchUnreadCounts) fetchUnreadCounts();
+        const { fetchUnreadCounts } = useDataStore.getState();
+        fetchUnreadCounts();
         return { success: true };
       }
       return { success: false };
@@ -461,10 +608,10 @@ export const useDataStore = create((set) => ({
         body: JSON.stringify({ ids }),
         credentials: 'include'
       });
-      const data = await response.json();
+      const data: ApiResult = await response.json();
       if (data.success) {
-        set((state: any) => ({
-          enquiries: state.enquiries.filter((e: any) => !ids.includes(e._id)),
+        set((state) => ({
+          enquiries: state.enquiries.filter((e) => !ids.includes(e._id)),
           pagination: { ...state.pagination, total: state.pagination.total - ids.length }
         }));
         return { success: true };
@@ -481,11 +628,11 @@ export const useDataStore = create((set) => ({
       const response = await fetch(`${BASE_URL}/careers?page=${page}&limit=${limit}&search=${search}&status=${status}&dateRange=${dateRange}&startDate=${startDate}&endDate=${endDate}`, {
         credentials: 'include'
       });
-      const data = await response.json();
+      const data: ApiResponse<Career[]> = await response.json();
       if (data.success) {
         set({ 
-          careers: data.data,
-          careersPagination: data.pagination
+          careers: data.data ?? [],
+          careersPagination: data.pagination ?? { total: 0, page, limit, pages: 1 }
         });
       }
     } catch (error) {
@@ -500,7 +647,7 @@ export const useDataStore = create((set) => ({
       const response = await fetch(`${BASE_URL}/careers?isExport=true&search=${search}&status=${status}&dateRange=${dateRange}&startDate=${startDate}&endDate=${endDate}`, {
         credentials: 'include'
       });
-      const data = await response.json();
+      const data: ApiResponse<Career[]> = await response.json();
       if (data.success && data.data) {
         if (data.data.length === 0) {
           alert('No data found to export with the current filters.');
@@ -543,16 +690,16 @@ export const useDataStore = create((set) => ({
         body: JSON.stringify({ ids, status }),
         credentials: 'include'
       });
-      const data = await response.json();
+      const data: ApiResult = await response.json();
       if (data.success) {
-        set((state: any) => ({
-          careers: state.careers.map((e: any) => 
+        set((state) => ({
+          careers: state.careers.map((e) => 
             ids.includes(e._id) ? { ...e, status } : e
           )
         }));
         // Update unread count automatically
-        const { fetchUnreadCounts } = useDataStore.getState() as any;
-        if (fetchUnreadCounts) fetchUnreadCounts();
+        const { fetchUnreadCounts } = useDataStore.getState();
+        fetchUnreadCounts();
         return { success: true };
       }
       return { success: false };
@@ -570,10 +717,10 @@ export const useDataStore = create((set) => ({
         body: JSON.stringify({ ids }),
         credentials: 'include'
       });
-      const data = await response.json();
+      const data: ApiResult = await response.json();
       if (data.success) {
-        set((state: any) => ({
-          careers: state.careers.filter((e: any) => !ids.includes(e._id)),
+        set((state) => ({
+          careers: state.careers.filter((e) => !ids.includes(e._id)),
           careersPagination: { ...state.careersPagination, total: state.careersPagination.total - ids.length }
         }));
         return { success: true };
@@ -589,16 +736,16 @@ export const useDataStore = create((set) => ({
       const response = await fetch(`${BASE_URL}/users`  , {
         credentials: 'include'
       });
-      const data = await response.json();
+      const data: ApiResponse<UserRecord[]> = await response.json();
       if (data.success) {
-        set({ users: data.data });
+        set({ users: data.data ?? [] });
       }
     } catch (error) {
       console.error('Failed to fetch users:', error);
     }
   },
 
-  addUser: async (userData: any) => {
+  addUser: async (userData) => {
     try {
       const response = await fetch(`${BASE_URL}/users`, {
         method: 'POST',
@@ -606,9 +753,9 @@ export const useDataStore = create((set) => ({
         body: JSON.stringify(userData),
         credentials: 'include'
       });
-      const data = await response.json();
+      const data: ApiResponse<UserRecord> = await response.json();
       if (data.success) {
-        set((state: any) => ({ users: [data.data, ...state.users] }));
+        set((state) => ({ users: data.data ? [data.data, ...state.users] : state.users }));
         return { success: true };
       } else {
         return { success: false, message: data.message };
@@ -619,7 +766,7 @@ export const useDataStore = create((set) => ({
     }
   },
 
-  updateUser: async (userId: string, userData: any) => {
+  updateUser: async (userId: string, userData) => {
     try {
       const response = await fetch(`${BASE_URL}/users/${userId}`, {
         method: 'PUT',
@@ -627,10 +774,10 @@ export const useDataStore = create((set) => ({
         body: JSON.stringify(userData),
         credentials: 'include'
       });
-      const data = await response.json();
+      const data: ApiResponse<UserRecord> = await response.json();
       if (data.success) {
-        set((state: any) => ({
-          users: state.users.map((u: any) => u._id === userId ? data.data : u)
+        set((state) => ({
+          users: state.users.map((u) => u._id === userId && data.data ? data.data : u)
         }));
         return { success: true };
       }
@@ -647,10 +794,10 @@ export const useDataStore = create((set) => ({
         method: 'DELETE',
         credentials: 'include'
       });
-      const data = await response.json();
+      const data: ApiResult = await response.json();
       if (data.success) {
-        set((state: any) => ({
-          users: state.users.filter((u: any) => u._id !== userId)
+        set((state) => ({
+          users: state.users.filter((u) => u._id !== userId)
         }));
         return { success: true };
       }

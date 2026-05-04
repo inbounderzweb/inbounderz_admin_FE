@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Lock, Eye, EyeOff, ShieldAlert, ArrowRight, UserPlus, Globe } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ShieldAlert, ArrowRight, Globe } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAppStore } from '../store/useStore';
 

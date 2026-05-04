@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Settings as SettingsIcon, User, Moon, Sun, Bell, Shield, Mail, Lock, Save, Globe, Palette } from 'lucide-react';
+import { useState } from 'react';
+import { User, Moon, Sun, Bell, Shield, Mail, Lock, Save, Palette } from 'lucide-react';
 import { useAppStore } from '../store/useStore';
 import { clsx } from 'clsx';
 
@@ -148,14 +148,14 @@ const Settings = () => {
                   <label className="text-[11px] font-bold text-gray-500 uppercase">Current Password</label>
                   <div className="relative">
                     <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input type="password" underline className="w-full pl-10 pr-4 py-2.5 bg-[var(--color-page-bg)] border border-[var(--color-border)] rounded-xl text-sm outline-none focus:border-blue-600 transition-colors dark:text-white" />
+                    <input type="password" className="w-full pl-10 pr-4 py-2.5 bg-[var(--color-page-bg)] border border-[var(--color-border)] rounded-xl text-sm outline-none focus:border-blue-600 transition-colors dark:text-white" />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-gray-500 uppercase">New Password</label>
                   <div className="relative">
                     <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input type="password" underline className="w-full pl-10 pr-4 py-2.5 bg-[var(--color-page-bg)] border border-[var(--color-border)] rounded-xl text-sm outline-none focus:border-blue-600 transition-colors dark:text-white" />
+                    <input type="password" className="w-full pl-10 pr-4 py-2.5 bg-[var(--color-page-bg)] border border-[var(--color-border)] rounded-xl text-sm outline-none focus:border-blue-600 transition-colors dark:text-white" />
                   </div>
                 </div>
                 <button className="px-6 py-2.5 bg-gray-900 dark:bg-white dark:text-black text-white rounded-xl text-sm font-bold hover:opacity-80 transition-colors">

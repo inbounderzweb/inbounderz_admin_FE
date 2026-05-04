@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Search, Bell, MessageSquare, Moon, Sun, X, Check, Mail, FileText, AlertTriangle, User, BarChart3, Clock, ExternalLink } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Search, Bell, MessageSquare, Moon, Sun, Check, Mail, FileText, AlertTriangle, User, Clock, ExternalLink } from 'lucide-react';
 import { useAppStore, useDataStore } from '../store/useStore';
 import { clsx } from 'clsx';
 
@@ -11,8 +11,7 @@ const Topbar = () => {
     fetchNotifications, 
     markNotificationAsRead, 
     markAllNotificationsAsRead,
-    clearAllNotifications,
-    isNotificationsLoading 
+    clearAllNotifications
   } = useDataStore() as any;
 
   const [isNotifOpen, setIsNotifOpen] = useState(false);
